@@ -309,6 +309,25 @@ export default function PromptStudio({
                       </div>
                     </div>
 
+                    {/* Redundant Repetitions to Eliminate */}
+                    {analysis?.redundancies && analysis.redundancies.length > 0 && (
+                      <div className="space-y-1 pt-1">
+                        <span className="text-[10px] font-mono text-amber-400 uppercase font-semibold block">
+                          Redundant Clauses Removed:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {analysis.redundancies.map((red, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800 text-amber-300 font-mono text-[11px] line-through flex items-center gap-1"
+                            >
+                              "{red}"
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Suggestions list */}
                     <div className="space-y-1.5 pt-1">
                       {analysis?.suggestions?.map((sug, idx) => (
@@ -365,7 +384,7 @@ export default function PromptStudio({
               <span className="text-[10px] text-slate-500 uppercase block font-bold">
                 TOKEN CONSUMPTION &amp; SAVINGS COMPARISON
               </span>
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
                 {result ? (
                   <>
                     <span className="text-slate-400">
@@ -373,7 +392,10 @@ export default function PromptStudio({
                     </span>
                     <span className="text-slate-600">→</span>
                     <span className="text-emerald-400 font-bold">
-                      LT: {variants?.lowToken?.tokenCount} tokens (-{metrics?.percentageSaved}% Saved)
+                      LT: {variants?.lowToken?.tokenCount} tokens ({metrics?.percentageSaved}% Saved)
+                    </span>
+                    <span className="text-slate-500 text-[11px] font-normal">
+                      (~{variants?.lowToken?.tokenCount} tokens consumed by {providers.find(p => p.id === targetProvider)?.name || 'Selected AI'})
                     </span>
                   </>
                 ) : (
@@ -449,7 +471,7 @@ export default function PromptStudio({
                       Alternative 2: Low-Token (LT)
                     </span>
                     <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300">
-                      -{metrics.percentageSaved}% Tokens Saved
+                      {metrics.percentageSaved}% Tokens Saved
                     </span>
                   </div>
                   <div className="text-xs font-mono text-emerald-400 font-bold">

@@ -69,6 +69,24 @@ class TestPromptForgeCore(unittest.TestCase):
         report = generate_export_report("markdown")
         self.assertIn("PromptForge", report)
 
+    def test_08_conversational_and_redundancy_compression(self):
+        # Exact prompt reported by user
+        prompt = "i want to make a ppt for the hackathon where my problem statement is deppend on the garbage / waste management . Waste management is the problem statement ."
+        res = optimize_prompt_pipeline(prompt, "claude-3-5-sonnet")
+        
+        orig_tokens = res["metrics"]["originalTokens"]
+        lt_tokens = res["variants"]["lowToken"]["tokenCount"]
+        
+        # Invariant 1: LT must use strictly fewer tokens than raw
+        self.assertLess(lt_tokens, orig_tokens)
+        
+        # Invariant 2: At least 50% tokens saved on this conversational prompt
+        self.assertGreater(res["metrics"]["percentageSaved"], 50.0)
+        
+        # Invariant 3: Fillers and redundancies must be accurately identified
+        self.assertGreater(len(res["analysis"]["detectedFillers"]), 0)
+        self.assertGreater(len(res["analysis"]["redundancies"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
