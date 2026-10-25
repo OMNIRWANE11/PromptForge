@@ -3,7 +3,7 @@ import {
   Sparkles, Copy, Check, FileText, Paperclip, 
   Trash2, ArrowRight, ShieldCheck, AlertCircle, CheckCircle2, 
   RefreshCw, Zap, Globe, Lightbulb, Mic, MicOff, Volume2, Square,
-  ExternalLink, Laptop, Download, Bot
+  ExternalLink, Laptop, Download, Bot, Info
 } from 'lucide-react';
 
 export default function PromptStudio({
@@ -15,7 +15,8 @@ export default function PromptStudio({
   result,
   loading,
   setActiveTab,
-  currentUser
+  currentUser,
+  onOpenAssumptionsModal
 }) {
   const [activeVariantTab, setActiveVariantTab] = useState('lt'); // 'lt' or 'hc'
   const [suggestionLang, setSuggestionLang] = useState('en');
@@ -940,9 +941,15 @@ export default function PromptStudio({
                   +{englishTokenCount - origTokens} Tokens (+{dynamicPct}% Context)
                 </span>
               )}
-              <span className="text-slate-400 text-xs hidden sm:inline font-sans">
-                (~{englishTokenCount} tokens consumed by {providers.find(p => p.id === targetProvider)?.name})
-              </span>
+              <button
+                type="button"
+                onClick={onOpenAssumptionsModal}
+                className="text-slate-400 hover:text-blue-400 text-xs hidden sm:flex items-center gap-1 font-sans transition-colors cursor-pointer"
+                title="Click to view stated tokenizer library & pricing assumptions"
+              >
+                <span>(~{englishTokenCount} tokens consumed by {providers.find(p => p.id === targetProvider)?.name})</span>
+                <Info className="w-3.5 h-3.5 text-blue-400" />
+              </button>
             </div>
           </div>
 

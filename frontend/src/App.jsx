@@ -133,6 +133,12 @@ export default function App() {
         onConnectionSuccess={() => refreshDbStatus()}
       />
 
+      {/* Stated Assumptions & Tokenization Methodology Modal */}
+      <AssumptionsModal
+        isOpen={isAssumptionsModalOpen}
+        onClose={() => setIsAssumptionsModalOpen(false)}
+      />
+
       {/* Clean Global Navbar with 3-Lines Menu Icon, Tabs, & PostgreSQL Pill */}
       <Navbar 
         activeTab={activeTab} 
@@ -141,6 +147,7 @@ export default function App() {
         currentUser={currentUser} 
         onLogout={handleLogout}
         onOpenDbModal={() => setIsDbModalOpen(true)}
+        onOpenAssumptionsModal={() => setIsAssumptionsModalOpen(true)}
         dbStatus={dbStatus}
       />
 
@@ -158,6 +165,7 @@ export default function App() {
             loading={loadingOptimize}
             setActiveTab={setActiveTab}
             currentUser={currentUser}
+            onOpenAssumptionsModal={() => setIsAssumptionsModalOpen(true)}
           />
         )}
 
@@ -200,6 +208,13 @@ export default function App() {
             </span>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-mono text-slate-500">
+            <button
+              onClick={() => setIsAssumptionsModalOpen(true)}
+              className="hover:text-blue-400 text-slate-400 transition-colors cursor-pointer"
+            >
+              Methodology & Assumptions
+            </button>
+            <span>•</span>
             <span className="flex items-center gap-1.5 text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>All Systems Operational</span>
