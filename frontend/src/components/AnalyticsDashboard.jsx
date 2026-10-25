@@ -1,357 +1,375 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, TrendingUp, TrendingDown, DollarSign, Download, 
-  Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, Lightbulb, Activity, Search
+  Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, Lightbulb, Activity, Search,
+  Database, RefreshCw, Filter, ChevronRight, ChevronLeft
 } from 'lucide-react';
 
-export default function AnalyticsDashboard({ setActiveTab }) {
-  const [activeFilter, setActiveFilter] = useState('30D');
+export default function AnalyticsDashboard({ setActiveTab, currentUser, setRawPrompt }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [modelFilter, setModelFilter] = useState('all');
+  const [analytics, setAnalytics] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const auditEvents = [
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoading(true);
+      const userId = currentUser?.id || 1;
+      try {
+        const [analyticsRes, historyRes] = await Promise.all([
+          fetch(`/api/user/analytics?userId=${userId}`),
+          fetch(`/api/user/history?userId=${userId}&limit=50`)
+        ]);
+        const analyticsData = await analyticsRes.json();
+        const historyData = await historyRes.json();
+
+        setAnalytics(analyticsData);
+        setHistory(historyData.history || []);
+      } catch (err) {
+        console.error("Error fetching analytics:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, [currentUser]);
+
+  // Historical Prompt rows matching Image 3 Bottom Table
+  const tableRows = [
     {
-      id: 'prod/analytics-service#184',
-      time: '14:32:04.18',
-      title: 'SQL Query Generator & Explainer',
-      model: 'Gemini 1.5 Pro',
-      modelColor: 'text-blue-400 bg-blue-950/60 border-blue-800',
-      raw: '1,842',
-      lean: '1,190',
-      delta: '-35.4%',
-      guardrail: 'Pass'
-    },
-    {
-      id: 'legal/document-pipeline#4042',
-      time: '14:31:18.50',
-      title: 'Compliance PDF Section Extractor',
+      time: 'Today 14:22',
+      prompt: 'Generate a comprehensive analysis of microservice telemetry and error rates...',
       model: 'Claude 3.5 Sonnet',
-      modelColor: 'text-emerald-400 bg-emerald-950/60 border-emerald-800',
-      raw: '12,400',
-      lean: '6,820',
-      delta: '-45.0%',
-      guardrail: 'Pass'
+      modelClass: 'text-emerald-400 bg-emerald-950/60 border-emerald-800',
+      raw: 492,
+      opt: 114,
+      saved: '76.8%',
+      lang: 'EN'
     },
     {
-      id: 'core-ui/widget-builder#882',
-      time: '14:28:45.32',
-      title: 'Frontend Component Scaffold (TSX)',
-      model: 'GPT-4o',
-      modelColor: 'text-amber-400 bg-amber-950/60 border-amber-800',
-      raw: '3,120',
-      lean: '2,410',
-      delta: '-22.8%',
-      guardrail: 'Pass'
+      time: 'Yesterday 18:10',
+      prompt: 'Mujhe ek automated script chahiye python me jo daily sales data parse kare...',
+      model: 'ChatGPT (GPT-4o)',
+      modelClass: 'text-blue-400 bg-blue-950/60 border-blue-800',
+      raw: 380,
+      opt: 98,
+      saved: '74.2%',
+      lang: 'HI'
     },
     {
-      id: 'sre/pager-bot#914',
-      time: '14:25:01.03',
-      title: 'Microservice Health Incident Brief',
-      model: 'Gemini 1.5 Flash',
-      modelColor: 'text-cyan-400 bg-cyan-950/60 border-cyan-800',
-      raw: '4,500',
-      lean: '3,010',
-      delta: '-33.1%',
-      guardrail: 'Pass'
+      time: 'Oct 28',
+      prompt: 'Create API authentication middleware in Go using JWT tokens and Redis session cache...',
+      model: 'Claude 3.5 Sonnet',
+      modelClass: 'text-emerald-400 bg-emerald-950/60 border-emerald-800',
+      raw: 610,
+      opt: 175,
+      saved: '71.3%',
+      lang: 'EN'
+    },
+    {
+      time: 'Oct 27',
+      prompt: 'Summarize the customer review sentiment de las últimas semanas in tabular format...',
+      model: 'General AI',
+      modelClass: 'text-amber-400 bg-amber-950/60 border-amber-800',
+      raw: 290,
+      opt: 120,
+      saved: '58.6%',
+      lang: 'ES'
     }
   ];
 
-  const filteredEvents = auditEvents.filter(ev => 
-    ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ev.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ev.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRows = tableRows.filter(r => {
+    const matchesSearch = r.prompt.toLowerCase().includes(searchTerm.toLowerCase()) || r.model.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesModel = modelFilter === 'all' || r.model.toLowerCase().includes(modelFilter.toLowerCase());
+    return matchesSearch && matchesModel;
+  });
 
   const handleExportCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "TIMESTAMP,TASK,IDENTIFIER,MODEL,RAW_TOKENS,LEAN_TOKENS,DELTA,GUARDRAIL\n" +
-      auditEvents.map(e => `${e.time},"${e.title}",${e.id},${e.model},${e.raw},${e.lean},${e.delta},${e.guardrail}`).join("\n");
+      "DATE_TIME,RAW_PROMPT,MODEL,RAW_TOKENS,OPT_TOKENS,PERCENT_SAVED,LANGUAGE\n" +
+      tableRows.map(e => `"${e.time}","${e.prompt.replace(/"/g, '""')}","${e.model}",${e.raw},${e.opt},"${e.saved}","${e.lang}"`).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "promptforge_audit_telemetry.csv");
+    link.setAttribute("download", `promptforge_telemetry_scoreboard.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="space-y-4 font-sans">
-      {/* 1. Executive Telemetry Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl">
-        <div className="space-y-1 font-mono">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-cyan-400 font-bold">TELEMETRY MODULE // P1-P2</span>
-            <span className="text-emerald-400 font-semibold">• Live Stream Sync: 12s ago</span>
-          </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">
-            Executive Token Intelligence &amp; Cost Guard
-          </h2>
-          <div className="text-[11px] text-slate-500">
-            Cluster: <strong className="text-slate-300">US-East-Production-Fleet</strong>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 font-mono text-xs">
-          {/* Time Filter Pills */}
-          <div className="flex items-center bg-[#070b13] p-1 rounded-lg border border-slate-800">
-            {['7D', '30D', '90D (Q3)', 'FY24'].map((period) => (
-              <button
-                key={period}
-                onClick={() => setActiveFilter(period)}
-                className={`px-3 py-1 rounded text-xs transition-colors cursor-pointer ${
-                  activeFilter === period
-                    ? 'bg-slate-800 text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {period}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/50 text-cyan-300 transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export Audit CSV</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Top 4 High-Level Metric KPI Cards */}
+    <div className="space-y-4 font-sans select-none">
+      {/* 1. Top 4 High-Level Metric KPI Cards (Matches Image 3 Top Row) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-mono">
-        {/* Cumulative Tokens Saved */}
-        <div className="p-3.5 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-2">
+        {/* TOTAL TOKENS SAVED */}
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase text-[10px]">CUMULATIVE TOKENS SAVED</span>
-            <span className="p-1 rounded bg-emerald-950 border border-emerald-800 text-emerald-400">
-              <Sparkles className="w-3.5 h-3.5" />
-            </span>
+            <span className="uppercase text-[10px] font-semibold tracking-wider">TOTAL TOKENS SAVED</span>
+            <span className="text-emerald-400">⚡</span>
           </div>
-          <div className="text-xl font-bold text-white tracking-tight">
-            14,842,109
+          <div className="text-2xl font-bold text-white tracking-tight">
+            4.86M
           </div>
-          <div className="flex items-center justify-between text-[11px] text-emerald-400">
-            <span>↗ +34.2% vs unoptimized baseline</span>
-            <span className="text-slate-500">~</span>
+          <div className="flex items-center text-[11px] text-emerald-400 font-semibold">
+            <span>↑ +34% Saved in past 30 days</span>
           </div>
         </div>
 
-        {/* Estimated API Cost Avoidance */}
-        <div className="p-3.5 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-2">
+        {/* AVERAGE TOKEN REDUCTION */}
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase text-[10px]">ESTIMATED API COST AVOIDANCE</span>
-            <span className="p-1 rounded bg-cyan-950 border border-cyan-800 text-cyan-400">
-              <DollarSign className="w-3.5 h-3.5" />
-            </span>
+            <span className="uppercase text-[10px] font-semibold tracking-wider">AVERAGE TOKEN REDUCTION</span>
+            <span className="text-blue-400">➗</span>
           </div>
-          <div className="text-xl font-bold text-emerald-400 tracking-tight">
-            $3,420.50
+          <div className="text-2xl font-bold text-white tracking-tight">
+            68.4%
           </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-400">
-            <span>9 accounts pooled across Anthropic, Google, OpenAI</span>
-            <span className="text-cyan-400 font-bold">-$0.23 / 1k req</span>
+          <div className="text-[11px] text-slate-400">
+            Prompts cut from 412 to 130 tokens
           </div>
         </div>
 
-        {/* Prompt Discipline Score */}
-        <div className="p-3.5 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-2">
+        {/* MONEY SAVED */}
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase text-[10px]">PROMPT DISCIPLINE SCORE</span>
-            <span className="p-1 rounded bg-amber-950 border border-amber-800 text-amber-400">
-              <Activity className="w-3.5 h-3.5" />
-            </span>
+            <span className="uppercase text-[10px] font-semibold tracking-wider">MONEY SAVED</span>
+            <span className="text-emerald-400">$</span>
           </div>
-          <div className="text-xl font-bold text-white tracking-tight flex items-baseline gap-2">
-            <span>78.4%</span>
-            <span className="text-emerald-400 text-xs font-semibold">+21.6%</span>
+          <div className="text-2xl font-bold text-white tracking-tight flex items-baseline gap-1">
+            <span>$382</span>
+            <span className="text-xs text-slate-400 font-normal">USD</span>
           </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-500">
-            <span>Baseline: 56.8%</span>
-            <span>Target: 85%</span>
+          <div className="text-[11px] text-slate-400">
+            ~$114/50 Off your AI billing bills
           </div>
         </div>
 
-        {/* Guardrail Zero-Defect Rate */}
-        <div className="p-3.5 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-2">
+        {/* PROMPTS OPTIMIZED */}
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase text-[10px]">GUARDRAIL ZERO-DEFECT RATE</span>
-            <span className="p-1 rounded bg-emerald-950 border border-emerald-800 text-emerald-400">
-              <ShieldCheck className="w-3.5 h-3.5" />
-            </span>
+            <span className="uppercase text-[10px] font-semibold tracking-wider">PROMPTS OPTIMIZED</span>
+            <span className="text-purple-400">↗</span>
           </div>
-          <div className="text-xl font-bold text-emerald-400 tracking-tight">
-            100.0%
+          <div className="text-2xl font-bold text-white tracking-tight">
+            1,248
           </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-400">
-            <span>0 constraints dropped • 12,480 AST safety passes</span>
-            <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-400 font-bold">
-              Deterministic
-            </span>
+          <div className="text-[11px] text-slate-400">
+            <span className="text-emerald-400 font-semibold">99.4%</span> Mean prompt intent accuracy
           </div>
         </div>
       </div>
 
-      {/* 3. Middle Section: Chart + Donut Distribution */}
+      {/* 2. Middle Section: Prompt Mastery Curve + Model Allocation Donut Chart (Matches Image 3) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 font-mono">
-        {/* Left Chart: User Prompt Improvement Line Chart (Requirement 7) */}
-        <div className="lg:col-span-8 p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-3 flex flex-col justify-between">
+        {/* Left: Prompt Mastery Curve: Before vs After (8 cols) */}
+        <div className="lg:col-span-8 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-bold text-white">
-                    User Prompt Writing Improvement (Discipline Score)
-                  </h4>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800 text-emerald-400 font-bold">
-                    Line Chart • Longitudinal Trend
+                  <h3 className="text-sm font-bold text-white">
+                    Prompt Mastery Curve: Before vs After
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                    30-Day Progress
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 font-sans mt-0.5">
-                  Measures whether the user's raw prompt writing is becoming leaner and more disciplined over time
+                  Your prompts start shorter and sharper, trimming unnecessary filler while keeping full prompt capability.
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs">
+              {/* Legend */}
+              <div className="flex items-center gap-3 text-xs">
                 <span className="flex items-center gap-1.5 text-slate-400 text-[11px]">
                   <span className="w-3 h-0.5 border-t border-dashed border-slate-400"></span>
-                  <span>Raw Tokens Consumed</span>
+                  <span>Before (Original Input)</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-bold">
                   <span className="w-3 h-0.5 bg-emerald-400"></span>
-                  <span>Discipline Score (% Gain)</span>
+                  <span>After (Optimized Result)</span>
                 </span>
               </div>
             </div>
 
-            {/* SVG Visual Line Chart */}
-            <div className="relative h-44 w-full bg-[#070b13] rounded-lg p-2 border border-slate-800/80 overflow-hidden">
-              <svg className="w-full h-full" viewBox="0 0 600 150" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                {/* Area under improvement curve */}
+            {/* Sub-header metric & Y-Axis Label */}
+            <div className="flex items-center justify-between text-[10px] text-slate-500 pb-1">
+              <span>Tokens Per Prompt</span>
+              <span className="text-emerald-400 font-bold">Your Progress: -53.8% Wordiness &amp; Filler</span>
+            </div>
+
+            {/* SVG Visual Line Chart with Floating Tooltip (Matches Image 3 Left) */}
+            <div className="relative h-48 w-full bg-slate-950 rounded-lg p-2 border border-slate-800/80 overflow-hidden">
+              {/* Y Axis Grid Numbers */}
+              <div className="absolute left-2 top-2 bottom-6 flex flex-col justify-between text-[9px] text-slate-600 select-none">
+                <span>550</span>
+                <span>400</span>
+                <span>250</span>
+                <span>100</span>
+              </div>
+
+              <svg className="w-full h-full pl-6 pr-2" viewBox="0 0 600 160" preserveAspectRatio="none">
+                {/* Horizontal grid lines */}
+                <line x1="30" y1="20" x2="590" y2="20" stroke="#1e293b" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="65" x2="590" y2="65" stroke="#1e293b" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="110" x2="590" y2="110" stroke="#1e293b" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="150" x2="590" y2="150" stroke="#1e293b" strokeWidth="1" />
+
+                {/* Gray Dashed Curve: Before (Original Input) */}
                 <path
-                  d="M 10 125 L 70 115 L 140 102 L 210 92 L 280 80 L 350 68 L 420 54 L 490 44 L 560 32 L 590 28 L 590 145 L 10 145 Z"
-                  fill="url(#chartGradient)"
-                />
-                {/* Raw Prompt Token Trend (dashed line decreasing as user improves) */}
-                <path
-                  d="M 10 65 L 70 72 L 140 85 L 210 95 L 280 108 L 350 112 L 420 120 L 490 126 L 560 132 L 590 135"
+                  d="M 40 45 L 140 65 L 240 85 L 340 100 L 440 115 L 560 120"
                   fill="none"
                   stroke="#64748b"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 3"
+                  strokeWidth="2"
+                  strokeDasharray="4 4"
                 />
-                {/* User Prompt Writing Discipline Improvement Line (Rising green line) */}
+
+                {/* Green Solid Curve: After (Optimized Result) */}
                 <path
-                  d="M 10 125 L 70 115 L 140 102 L 210 92 L 280 80 L 350 68 L 420 54 L 490 44 L 560 32 L 590 28"
+                  d="M 40 125 L 140 122 L 240 125 L 340 128 L 440 132 L 560 135"
                   fill="none"
                   stroke="#10b981"
                   strokeWidth="2.5"
                 />
-                <circle cx="10" cy="125" r="3" fill="#10b981" />
-                <circle cx="280" cy="80" r="3" fill="#10b981" />
-                <circle cx="590" cy="28" r="4" fill="#34d399" />
+
+                <circle cx="40" cy="125" r="3.5" fill="#10b981" />
+                <circle cx="240" cy="125" r="3.5" fill="#10b981" />
+                <circle cx="560" cy="135" r="4" fill="#34d399" />
               </svg>
+
+              {/* Floating Tooltip Box: Day 30 Snapshot (Matches Image 3) */}
+              <div className="absolute right-12 top-6 p-2 rounded-lg bg-slate-900/90 border border-slate-700 text-[10px] font-mono shadow-xl backdrop-blur-sm">
+                <div className="text-slate-300 font-bold">Day 30 Snapshot</div>
+                <div className="text-slate-400">Before: <strong className="text-white">240 tokens</strong></div>
+                <div className="text-emerald-400 font-bold">After: 118 tokens (-51%)</div>
+              </div>
             </div>
 
-            {/* Time labels */}
-            <div className="flex justify-between text-[10px] text-slate-500 pt-1">
-              <span>Week 1 (56.8% Baseline)</span>
-              <span>Week 2 (64.2%)</span>
-              <span>Week 3 (71.5%)</span>
-              <span>Week 4 (78.4% Current)</span>
-              <span className="text-emerald-400 font-bold">Target: 85%</span>
+            {/* X Axis Time Labels */}
+            <div className="flex justify-between text-[10px] text-slate-500 pt-1.5 px-6">
+              <span>Day 1</span>
+              <span>Day 6</span>
+              <span>Day 12</span>
+              <span>Day 18</span>
+              <span>Day 24</span>
+              <span className="text-slate-300 font-bold">Day 30 (Today)</span>
             </div>
           </div>
 
-          {/* Metric Footer Chips */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800 text-xs">
-            <div className="p-2 rounded bg-[#070b13] border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Prompting Habit Gain</span>
-              <span className="text-emerald-400 font-bold">+21.6% cleaner inputs</span>
-            </div>
-            <div className="p-2 rounded bg-[#070b13] border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Avg Fluff Stripped</span>
-              <span className="text-slate-200 font-bold">42.8 tokens / prompt</span>
-            </div>
-            <div className="p-2 rounded bg-[#070b13] border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Guardrail Defect Rate</span>
-              <span className="text-emerald-400 font-bold">0% (Zero loss)</span>
-            </div>
-            <div className="p-2 rounded bg-[#070b13] border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Tokens Saved / Mo</span>
-              <span className="text-cyan-400 font-bold">14.8M tokens</span>
-            </div>
+          {/* Quick Take Note at bottom of Chart Card */}
+          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-sans text-slate-300 flex items-center gap-2">
+            <span className="text-blue-400 font-mono font-bold">💡 Quick Take:</span>
+            <span>By week 3, you are naturally writing prompts that are <strong>2.3x more concise</strong> before even compressing!</span>
           </div>
         </div>
 
-        {/* Right Card: Donut Chart comparing ChatGPT vs Claude (Requirement 7) */}
-        <div className="lg:col-span-4 p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl flex flex-col justify-between space-y-3">
+        {/* Right: Model Allocation & Savings Donut Chart (4 cols, Matches Image 3 Right) */}
+        <div className="lg:col-span-4 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col justify-between space-y-3">
           <div>
             <div className="flex items-center justify-between pb-1">
-              <h4 className="text-sm font-bold text-white">ChatGPT vs Claude Comparison</h4>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-400 font-bold">
-                Donut Chart
-              </span>
+              <h3 className="text-sm font-bold text-white">Model Allocation &amp; Savings</h3>
+              <span className="text-slate-500 text-xs">ⓘ</span>
             </div>
             <p className="text-[11px] text-slate-400 font-sans">
-              Comparing prompt improvement &amp; token savings between ChatGPT and Claude AI
+              Where your prompts go and how much each model saves you on average.
             </p>
 
-            {/* Donut Graphic comparing Claude & ChatGPT */}
-            <div className="flex items-center justify-center py-4 relative">
-              <div className="w-32 h-32 rounded-full border-8 border-cyan-400 border-t-emerald-400 border-l-emerald-400 flex items-center justify-center">
-                <div className="text-center font-mono">
-                  <span className="text-xs font-bold text-white block">ChatGPT vs</span>
-                  <span className="text-xs font-bold text-emerald-400 block">Claude</span>
-                  <span className="text-[9px] text-slate-400 uppercase">Comparison</span>
+            {/* Visual Donut Chart with 68.4% AVG SAVINGS in center (Matches Image 3) */}
+            <div className="flex flex-col items-center justify-center py-4 relative">
+              <div className="relative w-36 h-36 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  {/* Background Track */}
+                  <path
+                    className="text-slate-800"
+                    strokeWidth="4.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  {/* Claude Arc (58% Purple/Indigo) */}
+                  <path
+                    className="text-indigo-500"
+                    strokeDasharray="58, 100"
+                    strokeWidth="4.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  {/* ChatGPT Arc (34% Cyan) */}
+                  <path
+                    className="text-blue-400"
+                    strokeDasharray="34, 100"
+                    strokeDashoffset="-58"
+                    strokeWidth="4.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  {/* General AI Arc (8% Amber) */}
+                  <path
+                    className="text-amber-400"
+                    strokeDasharray="8, 100"
+                    strokeDashoffset="-92"
+                    strokeWidth="4.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+
+                {/* Donut Center Display: 68.4% AVG SAVINGS */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center font-mono">
+                  <span className="text-base font-extrabold text-white">68.4%</span>
+                  <span className="text-[9px] text-slate-400 font-semibold tracking-wider">AVG SAVINGS</span>
                 </div>
               </div>
             </div>
 
-            {/* Claude vs ChatGPT Comparison Legend */}
+            {/* Model Breakdown Legend (Matches Image 3) */}
             <div className="space-y-2.5 text-xs">
-              {/* Claude */}
-              <div className="p-2 rounded-lg bg-[#070b13] border border-emerald-900/40 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-white font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                    <span>Anthropic Claude</span>
-                  </span>
-                  <span className="text-emerald-400 font-bold font-mono">54% Volume</span>
+              {/* Claude 3.5 Sonnet */}
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                  <div>
+                    <span className="font-bold text-white block">Claude 3.5 Sonnet</span>
+                    <span className="text-[10px] text-slate-400">58% Share (724 prompts)</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Prompt Improvement Rate:</span>
-                  <span className="text-emerald-300 font-bold">+28.4%</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-slate-500">
-                  <span>Avg Reduction: -44.0%</span>
-                  <span>5.64M tokens saved</span>
+                <div className="text-right">
+                  <span className="text-emerald-400 font-bold block">71.2%</span>
+                  <span className="text-[10px] text-slate-500">saved</span>
                 </div>
               </div>
 
-              {/* ChatGPT */}
-              <div className="p-2 rounded-lg bg-[#070b13] border border-cyan-900/40 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-white font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-                    <span>OpenAI ChatGPT</span>
-                  </span>
-                  <span className="text-cyan-400 font-bold font-mono">46% Volume</span>
+              {/* ChatGPT (GPT-4o) */}
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                  <div>
+                    <span className="font-bold text-white block">ChatGPT (GPT-4o)</span>
+                    <span className="text-[10px] text-slate-400">34% Share (424 prompts)</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Prompt Improvement Rate:</span>
-                  <span className="text-cyan-300 font-bold">+24.1%</span>
+                <div className="text-right">
+                  <span className="text-emerald-400 font-bold block">66.8%</span>
+                  <span className="text-[10px] text-slate-500">saved</span>
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-slate-500">
-                  <span>Avg Reduction: -38.5%</span>
-                  <span>4.82M tokens saved</span>
+              </div>
+
+              {/* General Universal */}
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                  <div>
+                    <span className="font-bold text-white block">General Universal</span>
+                    <span className="text-[10px] text-slate-400">8% Share (100 prompts)</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-emerald-400 font-bold block">54.0%</span>
+                  <span className="text-[10px] text-slate-500">saved</span>
                 </div>
               </div>
             </div>
@@ -359,159 +377,94 @@ export default function AnalyticsDashboard({ setActiveTab }) {
         </div>
       </div>
 
-      {/* 4. Recurring Token Leaks & Waste Heuristics */}
-      <div className="p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400">⚡</span>
-            <h4 className="text-sm font-bold text-white">
-              Recurring Token Leaks &amp; Waste Heuristics
-            </h4>
-          </div>
-          <span className="text-[11px] font-mono text-slate-400">
-            Auto-remediation active across all pipelines
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
-          {/* Card 1 */}
-          <div className="p-3.5 rounded-lg bg-[#070b13] border border-slate-800/90 space-y-2 flex flex-col justify-between">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300 font-bold">
-                  Found in 78% of raw prompts
-                </span>
-                <span className="text-rose-400">-28 tokens avg</span>
-              </div>
-              <h5 className="font-bold text-white text-sm">Redundant Role Framing</h5>
-              <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                Developers repeatedly prefix prompts with verbose personas like <span className="text-cyan-400 font-mono">"You are an expert fullstack architect..."</span>.
-              </p>
-            </div>
-
-            <div className="p-2 rounded bg-[#0b121e] border border-slate-800 text-[10px]">
-              <span className="text-cyan-400 font-bold block mb-0.5">PROMPTFORGE FIX ACTION</span>
-              <p className="text-slate-300 leading-tight">
-                Shifts persona into system-instruction parameter or strips boilerplate if redundant with schema requirements.
-              </p>
-            </div>
-          </div>
-
-          {/* Card 2 */}
-          <div className="p-3.5 rounded-lg bg-[#070b13] border border-slate-800/90 space-y-2 flex flex-col justify-between">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="px-2 py-0.5 rounded bg-rose-950/60 border border-rose-500/40 text-rose-300 font-bold">
-                  Found in 41% of file jobs
-                </span>
-                <span className="text-rose-400">-1,420 tokens avg</span>
-              </div>
-              <h5 className="font-bold text-white text-sm">Uncurated Document Dumps</h5>
-              <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                Engineers ingest massive multi-page raw specs or logs without targeting, causing context windows to balloon and cache misses to spike.
-              </p>
-            </div>
-
-            <div className="p-2 rounded bg-[#0b121e] border border-slate-800 text-[10px]">
-              <span className="text-cyan-400 font-bold block mb-0.5">PROMPTFORGE FIX ACTION</span>
-              <p className="text-slate-300 leading-tight">
-                Auto-extracts target syntax trees and slices irrelevant boilerplate headings prior to dispatch.
-              </p>
-            </div>
-          </div>
-
-          {/* Card 3 */}
-          <div className="p-3.5 rounded-lg bg-[#070b13] border border-slate-800/90 space-y-2 flex flex-col justify-between">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="px-2 py-0.5 rounded bg-blue-950/60 border border-blue-500/40 text-blue-300 font-bold">
-                  Found in 64% of prompts
-                </span>
-                <span className="text-rose-400">-14 tokens avg</span>
-              </div>
-              <h5 className="font-bold text-white text-sm">Conversational Politeness &amp; Filler</h5>
-              <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                Pleasantries such as <span className="text-cyan-400 font-mono">"Please can you kindly..."</span> and <span className="text-cyan-400 font-mono">"Thank you so much!"</span> occupy valuable compute slots.
-              </p>
-            </div>
-
-            <div className="p-2 rounded bg-[#0b121e] border border-slate-800 text-[10px]">
-              <span className="text-cyan-400 font-bold block mb-0.5">PROMPTFORGE FIX ACTION</span>
-              <p className="text-slate-300 leading-tight">
-                Pruned via deterministic regex token strips with 0% semantic or instructional degradation.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Live Optimization Audit Stream Table */}
-      <div className="p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-3 font-mono">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
+      {/* 3. Bottom Table: Historical Prompt Log & Quality Scoreboard (Matches Image 3) */}
+      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
           <div>
-            <h4 className="text-sm font-bold text-white">Live Optimization Audit Stream</h4>
-            <p className="text-[11px] text-slate-400 font-sans">
-              Real-time compilation logs showing token deltas, target models, and guardrail validation
+            <h4 className="text-sm font-bold text-white">
+              Historical Prompt Log &amp; Quality Scoreboard
+            </h4>
+            <p className="text-[11px] text-slate-400 font-sans mt-0.5">
+              Audited telemetry, translation tags, and raw vs compiled token metrics per execution.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#070b13] border border-slate-800 text-xs">
-              <Search className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Search Box */}
+            <div className="relative w-64">
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
               <input
                 type="text"
+                placeholder="Search prompts by keyword, model..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filter task or model..."
-                className="bg-transparent text-slate-200 placeholder-slate-500 focus:outline-none text-xs"
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 pl-8 pr-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
               />
             </div>
+
+            {/* Models Dropdown */}
+            <select
+              value={modelFilter}
+              onChange={(e) => setModelFilter(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2.5 text-xs text-slate-300 focus:outline-none"
+            >
+              <option value="all">All Models</option>
+              <option value="claude">Claude</option>
+              <option value="chatgpt">ChatGPT</option>
+              <option value="general">General AI</option>
+            </select>
+
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 transition-colors cursor-pointer"
+            >
+              <Filter className="w-3 h-3 text-blue-400" />
+              <span>Export</span>
+            </button>
           </div>
         </div>
 
-        {/* Stream Table */}
+        {/* Historical Scoreboard Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="text-[10px] text-slate-500 uppercase border-b border-slate-800">
-              <tr>
-                <th className="py-2.5 px-3">TIMESTAMP</th>
-                <th className="py-2.5 px-3">PROMPT TASK / IDENTIFIER</th>
-                <th className="py-2.5 px-3">TARGET MODEL</th>
-                <th className="py-2.5 px-3 text-right">RAW TOKENS</th>
-                <th className="py-2.5 px-3 text-right">LEAN TOKENS</th>
-                <th className="py-2.5 px-3 text-right">DELTA (%)</th>
-                <th className="py-2.5 px-3 text-center">SAFETY GUARDRAIL</th>
-                <th className="py-2.5 px-3 text-right">ACTION</th>
+            <thead>
+              <tr className="border-b border-slate-800 text-[10px] text-slate-400 uppercase">
+                <th className="py-2.5 px-3">DATE / TIME</th>
+                <th className="py-2.5 px-3">RAW PROMPT PREVIEW</th>
+                <th className="py-2.5 px-3">MODEL</th>
+                <th className="py-2.5 px-3 text-right">RAW</th>
+                <th className="py-2.5 px-3 text-right">OPT.</th>
+                <th className="py-2.5 px-3 text-right">% SAVED</th>
+                <th className="py-2.5 px-3 text-center">LANG</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {filteredEvents.map((ev, idx) => (
+            <tbody className="divide-y divide-slate-800/60">
+              {filteredRows.map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-900/40 transition-colors">
-                  <td className="py-2.5 px-3 text-slate-400 text-[11px]">{ev.time}</td>
-                  <td className="py-2.5 px-3">
-                    <span className="font-bold text-white block">{ev.title}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">{ev.id}</span>
+                  <td className="py-3 px-3 text-slate-400 text-[11px] whitespace-nowrap">
+                    {row.time}
                   </td>
-                  <td className="py-2.5 px-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] border ${ev.modelColor}`}>
-                      {ev.model}
+                  <td className="py-3 px-3 text-slate-200 max-w-md truncate font-sans text-xs">
+                    "{row.prompt}"
+                  </td>
+                  <td className="py-3 px-3 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${row.modelClass}`}>
+                      {row.model}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-right text-slate-300">{ev.raw}</td>
-                  <td className="py-2.5 px-3 text-right text-emerald-400 font-bold">{ev.lean}</td>
-                  <td className="py-2.5 px-3 text-right text-emerald-400 font-bold">{ev.delta}</td>
-                  <td className="py-2.5 px-3 text-center">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold">
-                      <Check className="w-2.5 h-2.5" /> Pass
-                    </span>
+                  <td className="py-3 px-3 text-right text-slate-400">
+                    {row.raw}
                   </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <button
-                      onClick={() => setActiveTab('studio')}
-                      className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-[10px] transition-colors cursor-pointer"
-                    >
-                      Open in Studio
-                    </button>
+                  <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                    {row.opt}
+                  </td>
+                  <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                    {row.saved}
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <span className="px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 text-[10px] font-bold">
+                      {row.lang}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -519,12 +472,18 @@ export default function AnalyticsDashboard({ setActiveTab }) {
           </table>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/80">
-          <span>Showing {filteredEvents.length} of 12,480 telemetry events</span>
-          <div className="flex items-center gap-2">
-            <button className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Previous</button>
-            <button className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Next</button>
+        {/* Table Pagination (Matches Image 3 Bottom) */}
+        <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-800/60">
+          <div>
+            Showing 1-4 of 1,248 prompt optimizations
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 font-bold">1</span>
+            <span className="px-2 py-0.5 rounded hover:bg-slate-800 text-slate-400 cursor-pointer">2</span>
+            <span className="px-2 py-0.5 rounded hover:bg-slate-800 text-slate-400 cursor-pointer">3</span>
+            <span>...</span>
+            <span className="px-2 py-0.5 rounded hover:bg-slate-800 text-slate-400 cursor-pointer">312</span>
+            <ChevronRight className="w-4 h-4 text-slate-400" />
           </div>
         </div>
       </div>

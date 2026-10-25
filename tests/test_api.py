@@ -87,6 +87,103 @@ class TestPromptForgeCore(unittest.TestCase):
         self.assertGreater(len(res["analysis"]["detectedFillers"]), 0)
         self.assertGreater(len(res["analysis"]["redundancies"]), 0)
 
+    def test_09_database_and_auth(self):
+        from backend.database import create_user, authenticate_user, save_user_prompt, get_user_analytics
+        import time
+        
+        # Test unique user signup
+        test_uname = f"testuser_{int(time.time())}"
+        user = create_user(test_uname, f"{test_uname}@test.com", "mypassword123", "Test Engineer")
+        self.assertIsNotNone(user["id"])
+        
+        # Test login
+        auth = authenticate_user(test_uname, "mypassword123")
+        self.assertIsNotNone(auth)
+        self.assertEqual(auth["username"], test_uname)
+        
+        # Test wrong password fails
+        bad_auth = authenticate_user(test_uname, "wrongpass")
+        self.assertIsNone(bad_auth)
+        
+        # Test prompt persistence
+        prompt_id = save_user_prompt(
+            user_id=user["id"],
+            raw_prompt="Write a Python script to parse logs. JSON format only.",
+            target_provider="claude-3-5-sonnet",
+            task_type="coding",
+            hc_prompt="HC prompt",
+            lt_prompt="LT prompt",
+            raw_tokens=35,
+            optimized_tokens=15,
+            fillers=["please"],
+            redundancies=[]
+        )
+        self.assertGreater(prompt_id, 0)
+        
+        # Test analytics computed from DB
+        analytics = get_user_analytics(user["id"])
+        self.assertEqual(analytics["totalPrompts"], 1)
+        self.assertEqual(analytics["platformDistribution"]["claude"]["count"], 1)
+        self.assertGreater(analytics["totalTokensSaved"], 0)
+
+    def test_10_regional_marathi_optimization(self):
+        # Test regional prompt optimization (Marathi example)
+        from backend.multilingual import detect_language
+        from backend.tokenizers import count_tokens_openai
+
+        marathi_prompt = "मला भारतीय राज्यघटनेच्या 'प्रस्तावाने'वर (Preamble) एक पीडीएफ (PDF) तयार करायची आहे . भारतीय राज्यघटनेतील मजकुरातून ५० ओळी घेऊन एक पीडीएफ तयार करा"
+        lang = detect_language(marathi_prompt)
+        self.assertIn(lang["code"], ["mr", "hi"])
+        self.assertTrue(lang["isNonEnglish"])
+
+        res = optimize_prompt_pipeline(marathi_prompt, "gpt-4o")
+        self.assertIn("lowToken", res["variants"])
+        self.assertIn("highContext", res["variants"])
+        self.assertGreater(res["metrics"]["percentageSaved"], 40.0)
+        self.assertIn("mr", res["analysis"]["localizedSuggestionsByLang"])
+
+    def test_11_pdf_converter_and_chunking(self):
+        # Test real PDF document creation and conversion to Markdown
+        import pymupdf
+        from backend.file_converter import process_uploaded_file
+
+        # Generate a minimal PDF with sections using PyMuPDF
+        doc = pymupdf.open()
+        page = doc.new_page()
+        page.insert_text((50, 72), "EXECUTIVE SUMMARY\n\nThis is a token-efficient compliance document.")
+        page.insert_text((50, 150), "SECTION 1: SYSTEM ARCHITECTURE\n\nMicroservice mesh deployed on Kubernetes cluster.")
+        pdf_bytes = doc.tobytes()
+        doc.close()
+
+        result = process_uploaded_file(pdf_bytes, "architecture_report.pdf")
+        self.assertEqual(result["filename"], "architecture_report.pdf")
+        self.assertEqual(result["targetFormat"], "markdown")
+        self.assertEqual(result["formatExtension"], ".md")
+        self.assertGreater(result["rawEstimatedTokens"], result["convertedTokens"])
+        self.assertGreater(result["conversionSavingsPct"], 0)
+        self.assertTrue(len(result["chunks"]) >= 1)
+        self.assertIn("Executive Summary", result["fullContent"])
+
+    def test_12_short_query_low_token_guarantee(self):
+        # Test that short queries (e.g. 'what meant by DBMS') strictly reduce tokens in Low-Token mode
+        test_queries = [
+            "what meant by DBMS",
+            "what is meant by DBMS",
+            "what is DBMS",
+            "tell me about DBMS",
+            "what is python",
+            "tell me about yourself , i want to know your information"
+        ]
+        for q in test_queries:
+            for model in ["claude-3-5-sonnet", "gpt-4o"]:
+                res = optimize_prompt_pipeline(q, model)
+                orig = res["metrics"]["originalTokens"]
+                lt = res["variants"]["lowToken"]["tokenCount"]
+                self.assertLessEqual(lt, orig, f"Low-token ({lt}) must be <= raw ({orig}) for query '{q}' on {model}")
+                self.assertGreaterEqual(res["metrics"]["percentageSaved"], 0.0)
+                # Verify that 'Create what meant' is never generated
+                self.assertNotIn("Create what", res["variants"]["lowToken"]["prompt"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,10 +16,10 @@ export default function CrossModelMatrix() {
   return (
     <div className="space-y-4">
       {/* 1. Benchmark Suite Sub-Header */}
-      <div className="p-3.5 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+      <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 text-cyan-400 font-bold">
+            <span className="px-2 py-0.5 rounded bg-blue-600/10 border border-blue-500/30 text-blue-400 font-bold">
               BENCHMARK SUITE V3.2
             </span>
             <span className="text-emerald-400 font-semibold">• 10,000 Iterations Verified</span>
@@ -30,8 +30,8 @@ export default function CrossModelMatrix() {
         </div>
 
         <div className="flex items-center gap-2 flex-1 max-w-md mx-2">
-          <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#070b13] border border-slate-800 text-slate-300 text-xs">
-            <span className="text-cyan-400">{`{ }`}</span>
+          <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 text-xs">
+            <span className="text-blue-400">{`{ }`}</span>
             <span className="truncate">"Multi-tenant authorization middleware with JWT vali..."</span>
           </div>
         </div>
@@ -39,7 +39,7 @@ export default function CrossModelMatrix() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleSimulate}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/50 text-cyan-300 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/40 text-blue-300 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
             <span>Re-run Benchmark Simulation</span>
@@ -68,20 +68,20 @@ export default function CrossModelMatrix() {
 
           <p className="text-xs text-slate-300 leading-relaxed">
             It achieves <strong className="text-emerald-400 font-semibold">97.4% Output Quality Retention</strong> using{' '}
-            <strong className="text-cyan-400 font-semibold">44% fewer tokens</strong> than GPT-4o, delivering the lowest total cost-to-accuracy ratio (<strong className="text-white">$0.62 per 10k calls</strong>) while preserving strict Go type signatures without explanatory fluff.
+            <strong className="text-blue-400 font-semibold">44% fewer tokens</strong> than GPT-4o, delivering the lowest total cost-to-accuracy ratio (<strong className="text-white">$0.62 per 10k calls</strong>) while preserving strict Go type signatures without explanatory fluff.
           </p>
         </div>
 
         <div className="md:col-span-4 flex items-center justify-end gap-4 font-mono text-xs">
-          <div className="text-right p-2.5 rounded-lg bg-[#070b13]/80 border border-slate-800">
+          <div className="text-right p-2.5 rounded-lg bg-slate-950/80 border border-slate-800">
             <span className="text-[10px] text-slate-500 uppercase block">PROJECTED NET SAVINGS</span>
             <span className="text-emerald-400 font-black text-sm">-$432.80</span>
             <span className="text-[10px] text-slate-400 block">per 1,000,000 pipeline calls</span>
           </div>
 
-          <div className="text-right p-2.5 rounded-lg bg-[#070b13]/80 border border-slate-800">
+          <div className="text-right p-2.5 rounded-lg bg-slate-950/80 border border-slate-800">
             <span className="text-[10px] text-slate-500 uppercase block">QUALITY-COST RATIO</span>
-            <span className="text-cyan-400 font-black text-sm">157.1 pts/$</span>
+            <span className="text-blue-400 font-black text-sm">157.1 pts/$</span>
             <span className="text-[10px] text-slate-400 block">Highest across models</span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function CrossModelMatrix() {
       {/* 3. Three Provider Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Gemini 1.5 Flash / Pro */}
-        <div className="p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl flex flex-col justify-between space-y-3">
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col justify-between space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export default function CrossModelMatrix() {
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 block">Avg Latency</span>
-                <span className="text-cyan-400 font-bold">680 ms</span>
+                <span className="text-blue-400 font-bold">680 ms</span>
                 <span className="text-[10px] text-emerald-400 block">Fastest Response</span>
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function CrossModelMatrix() {
             <div className="grid grid-cols-2 gap-2 text-xs font-mono py-2 border-y border-slate-800">
               <div>
                 <span className="text-[10px] text-slate-500 block">Token Density</span>
-                <span className="text-emerald-400 font-bold">228 <span className="text-cyan-400 text-[10px]">-44%</span></span>
+                <span className="text-emerald-400 font-bold">228 <span className="text-blue-400 text-[10px]">-44%</span></span>
                 <span className="text-[10px] text-slate-500 block">Anthropic Tokenizer</span>
               </div>
               <div>
@@ -229,7 +229,7 @@ export default function CrossModelMatrix() {
         </div>
 
         {/* GPT-4o (Omni) */}
-        <div className="p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl flex flex-col justify-between space-y-3">
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col justify-between space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function CrossModelMatrix() {
       </div>
 
       {/* 4. Deep Parametric Audit Matrix */}
-      <div className="p-4 rounded-xl bg-[#0b121e] border border-slate-800 shadow-xl space-y-3 font-mono">
+      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 font-mono">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -333,7 +333,7 @@ export default function CrossModelMatrix() {
               <tr>
                 <th className="py-2 px-3">METRIC DIMENSION</th>
                 <th className="py-2 px-3">GEMINI 1.5 PRO/FLASH</th>
-                <th className="py-2 px-3 text-cyan-400">• CLAUDE 3.5 SONNET (WINNER)</th>
+                <th className="py-2 px-3 text-blue-400">• CLAUDE 3.5 SONNET (WINNER)</th>
                 <th className="py-2 px-3">OPENAI GPT-4o</th>
                 <th className="py-2 px-3 text-right">DELTA ADVANTAGE</th>
               </tr>
@@ -345,7 +345,7 @@ export default function CrossModelMatrix() {
                   <span>Raw Unoptimized Tokens</span>
                 </td>
                 <td className="py-2 px-3">482</td>
-                <td className="py-2 px-3 text-cyan-400 font-bold">410</td>
+                <td className="py-2 px-3 text-blue-400 font-bold">410</td>
                 <td className="py-2 px-3">520</td>
                 <td className="py-2 px-3 text-right text-cyan-300 font-semibold">-21.1% Claude Base</td>
               </tr>
@@ -356,7 +356,7 @@ export default function CrossModelMatrix() {
                   <span>Optimized HC (High Compression)</span>
                 </td>
                 <td className="py-2 px-3">312</td>
-                <td className="py-2 px-3 text-cyan-400 font-bold">284</td>
+                <td className="py-2 px-3 text-blue-400 font-bold">284</td>
                 <td className="py-2 px-3">430</td>
                 <td className="py-2 px-3 text-right text-cyan-300 font-semibold">-33.9% vs GPT-4o</td>
               </tr>
@@ -388,7 +388,7 @@ export default function CrossModelMatrix() {
                   <span className="text-slate-500">💳</span>
                   <span>Cost per 10k Calls</span>
                 </td>
-                <td className="py-2 px-3 text-cyan-400">$0.35</td>
+                <td className="py-2 px-3 text-blue-400">$0.35</td>
                 <td className="py-2 px-3 text-emerald-400 font-bold">$0.62</td>
                 <td className="py-2 px-3 text-amber-400">$1.15</td>
                 <td className="py-2 px-3 text-right text-emerald-400 font-semibold">Save $5.30 per 100k vs GPT-4o</td>
@@ -413,7 +413,7 @@ export default function CrossModelMatrix() {
                 <td className="py-2 px-3 text-slate-400">0 ms (pre-cached)</td>
                 <td className="py-2 px-3 text-slate-400">0 ms (pre-cached)</td>
                 <td className="py-2 px-3 text-slate-400">0 ms (pre-cached)</td>
-                <td className="py-2 px-3 text-right text-cyan-400">L2 Cache Hit</td>
+                <td className="py-2 px-3 text-right text-blue-400">L2 Cache Hit</td>
               </tr>
             </tbody>
           </table>

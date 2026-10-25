@@ -30,3 +30,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+@keyframes slideRight {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slideRight {
+  animation: slideRight 0.22s ease-out forwards;
+}
+

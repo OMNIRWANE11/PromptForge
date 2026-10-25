@@ -1,83 +1,119 @@
 import React from 'react';
-import { Sparkles, Cpu, FileText, BarChart3, Terminal, BookOpen, Bell, CheckCircle } from 'lucide-react';
+import { Menu, Database, LogOut, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
+import PromptForgeLogo from './PromptForgeLogo';
 
-export default function Navbar({ activeTab, setActiveTab }) {
-  const navTabs = [
-    { id: 'studio', label: 'Prompt Studio', tag: '(P0)' },
-    { id: 'files', label: 'File Structuring', tag: '(P0/P1)' },
-    { id: 'matrix', label: 'Cross-Model Matrix', tag: '(P1)' },
-    { id: 'analytics', label: 'Token Analytics', tag: '(P1/P2)' },
+export default function Navbar({ 
+  activeTab, 
+  setActiveTab, 
+  onToggleSidebar, 
+  currentUser, 
+  onLogout,
+  onOpenDbModal,
+  onOpenAssumptionsModal,
+  dbStatus 
+}) {
+  const tabs = [
+    { id: 'studio', label: 'Prompt Optimizer' },
+    { id: 'files', label: 'File Converter' },
+    { id: 'diff', label: 'Comparison & Diff' },
+    { id: 'analytics', label: 'Token Analytics' },
   ];
 
   return (
-    <header className="h-14 border-b border-slate-800/90 bg-[#070b13] sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6">
-      {/* Brand & Version Badge */}
+    <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between font-sans">
+      {/* Left: 3-Lines Hamburger Button & Logo */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 font-mono">
-          <span className="text-cyan-400 font-bold text-base tracking-tight">&gt;_</span>
-          <span className="text-white font-bold text-base tracking-tight">PromptForge</span>
+        {/* 3-Lines Menu Icon Button */}
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/60 transition-all cursor-pointer flex items-center gap-2 group shadow-sm"
+          title="Open Menu"
+        >
+          <Menu className="w-5 h-5 text-blue-400 group-hover:scale-105 transition-transform" />
+          <span className="text-xs font-medium text-slate-300 hidden sm:inline">Menu</span>
+        </button>
+
+        {/* Brand Logo with Professional PromptForge Emblem */}
+        <div 
+          onClick={() => setActiveTab('studio')}
+          className="flex items-center gap-2 cursor-pointer select-none group"
+        >
+          <PromptForgeLogo size="sm" variant="horizontal" />
         </div>
-        <span className="px-2 py-0.5 rounded text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/60">
-          v1.4-Hackathon-MVP
-        </span>
       </div>
 
-      {/* Main Navigation Tabs */}
-      <nav className="flex items-center gap-1.5">
-        {navTabs.map((tab) => {
+      {/* Center: Clean Workspace Tabs */}
+      <nav className="hidden md:flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-slate-800/90 text-cyan-300 font-semibold border border-cyan-500/50 shadow-sm shadow-cyan-500/10'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'
+                  ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
               }`}
             >
-              <span className="text-xs">{tab.label}</span>
-              <span className="text-[10px] text-slate-500 font-mono -mt-0.5">{tab.tag}</span>
+              {tab.label}
             </button>
           );
         })}
       </nav>
 
-      {/* Status Indicators & User Profile */}
-      <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/50 border border-emerald-500/40 text-emerald-400 text-xs font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Saved: 142.8k tokens / $18.40</span>
-        </div>
+      {/* Right: Stated Assumptions, PostgreSQL Status Pill & User Profile */}
+      <div className="flex items-center gap-2">
+        {/* Stated Assumptions & Tokenizer Methodology Button */}
+        <button
+          onClick={onOpenAssumptionsModal}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-700/60 bg-slate-800/60 hover:bg-slate-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all cursor-pointer shadow-sm"
+          title="View stated assumptions and tokenizer library specifications"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden lg:inline">Assumptions</span>
+        </button>
 
-        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-700/80 text-slate-300 text-xs font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-          <span>All Tokenizers Live</span>
-        </div>
+        {/* PostgreSQL Database Pill */}
+        <button
+          onClick={onOpenDbModal}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+            dbStatus?.isPostgres
+              ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-950/60'
+              : 'bg-amber-950/30 border-amber-700/60 text-amber-300 hover:bg-amber-950/50'
+          }`}
+          title="Click to configure PostgreSQL connection"
+        >
+          <span className={`w-2 h-2 rounded-full ${dbStatus?.isPostgres ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+          <Database className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">
+            {dbStatus?.isPostgres ? 'PostgreSQL Active' : 'Connect PostgreSQL'}
+          </span>
+        </button>
 
-        <div className="flex items-center gap-2 text-slate-400 pl-1 border-l border-slate-800">
-          <button className="p-1.5 hover:text-slate-200 hover:bg-slate-800/60 rounded-md transition-colors" title="Documentation">
-            <BookOpen className="w-4 h-4" />
-          </button>
-          <div className="relative">
-            <button className="p-1.5 hover:text-slate-200 hover:bg-slate-800/60 rounded-md transition-colors" title="Notifications">
-              <Bell className="w-4 h-4" />
-            </button>
-            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-cyan-500 text-slate-950 rounded-full text-[9px] font-bold flex items-center justify-center">
-              2
-            </span>
-          </div>
-        </div>
-
-        {/* User Card */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+        {/* User Card & Logout */}
+        <div className="flex items-center gap-2 pl-2 border-l border-slate-800 text-xs">
           <div className="text-right hidden sm:block">
-            <div className="text-xs font-semibold text-slate-200 leading-tight">Priya Patel</div>
-            <div className="text-[10px] text-cyan-400 font-mono leading-tight">AI Lead</div>
+            <div className="font-semibold text-slate-200 leading-tight">
+              {currentUser?.fullName || 'Priya Patel'}
+            </div>
+            <div className="text-[11px] text-slate-400 leading-tight">
+              @{currentUser?.username || 'priya'}
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold border border-cyan-400/40 shadow-sm">
-            PP
+          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200 font-semibold text-xs shadow-sm">
+            {currentUser?.fullName?.charAt(0) || 'P'}
           </div>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              title="Sign Out"
+              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer ml-0.5"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </header>
