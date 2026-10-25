@@ -47,12 +47,12 @@ def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
 
 
 def get_pg_connection():
-    """Attempts to connect to PostgreSQL."""
+    """Attempts to connect to PostgreSQL with fast failover."""
     import psycopg2
     from psycopg2.extras import RealDictCursor
     
     if DATABASE_URL:
-        return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, connect_timeout=3)
+        return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, connect_timeout=1)
     
     # Try connecting to the target database directly
     try:
@@ -63,33 +63,36 @@ def get_pg_connection():
             password=PG_PASSWORD,
             dbname=PG_DB,
             cursor_factory=RealDictCursor,
-            connect_timeout=3
+            connect_timeout=1
         )
-    except psycopg2.OperationalError as e:
+    except Exception as e:
         # If target database doesn't exist, try connecting to default 'postgres' db to create it
         if "does not exist" in str(e).lower():
-            admin_conn = psycopg2.connect(
-                host=PG_HOST,
-                port=PG_PORT,
-                user=PG_USER,
-                password=PG_PASSWORD,
-                dbname="postgres",
-                connect_timeout=3
-            )
-            admin_conn.autocommit = True
-            cur = admin_conn.cursor()
-            cur.execute(f'CREATE DATABASE "{PG_DB}"')
-            admin_conn.close()
-            
-            return psycopg2.connect(
-                host=PG_HOST,
-                port=PG_PORT,
-                user=PG_USER,
-                password=PG_PASSWORD,
-                dbname=PG_DB,
-                cursor_factory=RealDictCursor,
-                connect_timeout=3
-            )
+            try:
+                admin_conn = psycopg2.connect(
+                    host=PG_HOST,
+                    port=PG_PORT,
+                    user=PG_USER,
+                    password=PG_PASSWORD,
+                    dbname="postgres",
+                    connect_timeout=1
+                )
+                admin_conn.autocommit = True
+                cur = admin_conn.cursor()
+                cur.execute(f'CREATE DATABASE "{PG_DB}"')
+                admin_conn.close()
+                
+                return psycopg2.connect(
+                    host=PG_HOST,
+                    port=PG_PORT,
+                    user=PG_USER,
+                    password=PG_PASSWORD,
+                    dbname=PG_DB,
+                    cursor_factory=RealDictCursor,
+                    connect_timeout=1
+                )
+            except Exception:
+                raise e
         raise e
 
 

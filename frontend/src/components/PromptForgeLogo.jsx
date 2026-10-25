@@ -31,7 +31,7 @@ export default function PromptForgeLogo({
   const renderIcon = () => (
     <div 
       style={{ width: `${iconPixel}px`, height: `${iconPixel}px` }} 
-      className="relative shrink-0 rounded-full select-none shadow-md shadow-blue-600/20 ring-1 ring-blue-500/40 overflow-hidden bg-slate-950"
+      className="relative shrink-0 rounded-full select-none shadow-sm shadow-blue-500/20 ring-1 ring-blue-500/30 overflow-hidden bg-slate-900"
     >
       <img
         src="/logo.png"
@@ -51,7 +51,7 @@ export default function PromptForgeLogo({
       <div className={`flex flex-col items-center justify-center select-none ${className}`} onClick={onClick}>
         <div 
           style={{ width: `${badgePixel}px`, height: `${badgePixel}px` }}
-          className="relative shrink-0 rounded-full shadow-xl shadow-blue-600/25 ring-2 ring-blue-500/50 hover:ring-blue-400 transition-all cursor-pointer bg-slate-950 overflow-hidden"
+          className="relative shrink-0 rounded-full shadow-lg shadow-blue-500/20 ring-2 ring-blue-500/40 hover:ring-blue-500 transition-all cursor-pointer bg-slate-900 overflow-hidden"
         >
           <img
             src="/logo.png"
@@ -65,10 +65,10 @@ export default function PromptForgeLogo({
         {showTagline && (
           <div className="mt-3 text-center">
             <div className="flex items-center justify-center gap-1.5 text-xl sm:text-2xl font-black tracking-tight font-sans">
-              <span className="text-blue-500">PROMPT</span>
-              <span className="text-white">FORGE</span>
+              <span className="text-blue-600">PROMPT</span>
+              <span className="text-slate-900">FORGE</span>
             </div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 tracking-[0.25em] uppercase font-mono mt-0.5">
+            <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 tracking-[0.25em] uppercase font-mono mt-0.5">
               OPTIMIZE • MINIMIZE • MAXIMIZE
             </div>
           </div>
@@ -92,11 +92,11 @@ export default function PromptForgeLogo({
       {renderIcon()}
       <div className="flex flex-col justify-center leading-none">
         <div className={`font-black tracking-tight font-sans flex items-center ${currentSize.text}`}>
-          <span className="text-blue-500">Prompt</span>
-          <span className="text-white">Forge</span>
+          <span className="text-blue-600">Prompt</span>
+          <span className="text-slate-900">Forge</span>
         </div>
         {showTagline && (
-          <span className="text-[9px] font-bold text-slate-400 tracking-[0.2em] uppercase font-mono mt-0.5">
+          <span className="text-[9px] font-bold text-slate-500 tracking-[0.2em] uppercase font-mono mt-0.5">
             OPTIMIZE • MINIMIZE
           </span>
         )}

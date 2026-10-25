@@ -79,91 +79,91 @@ Triage enterprise IT server incidents. Classify category into [hardware|networki
       {/* 1. Side-by-Side BEFORE vs AFTER Comparison (Matches Image 5 Top) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 font-mono">
         {/* Left: BEFORE Raw Prompt */}
-        <div className="p-4 rounded-xl bg-slate-900 border border-rose-950/70 shadow-xl space-y-2 flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white border border-rose-200 shadow-sm space-y-2 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 border border-rose-800 text-rose-400 uppercase">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 border border-rose-200 text-rose-700 uppercase">
                   BEFORE
                 </span>
-                <span className="text-sm font-bold text-white">Raw Prompt</span>
+                <span className="text-sm font-bold text-slate-900">Raw Prompt</span>
               </div>
-              <span className="text-xs font-bold text-rose-400 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-900">
+              <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                 {origTokens} Tokens (Wordy)
               </span>
             </div>
 
             {/* Code / Text Block with Red Strikethrough Highlights */}
-            <div className="p-3 rounded-lg bg-slate-950 border border-rose-950/80 text-xs font-mono text-slate-300 leading-relaxed max-h-56 overflow-y-auto space-y-2">
+            <div className="p-3.5 rounded-xl bg-rose-50/30 border border-rose-200 text-xs font-mono text-slate-800 leading-relaxed max-h-56 overflow-y-auto space-y-2">
               <p>
-                <span className="line-through text-rose-400 bg-rose-950/40 px-1 rounded">Hey can you please</span> help me triage this incoming tier-3 enterprise IT ticket? <span className="line-through text-rose-400 bg-rose-950/40 px-1 rounded">act as an expert</span> cloud infrastructure triage engineer with over 15 years experience.
+                <span className="line-through text-rose-600 bg-rose-100 px-1 rounded font-medium">Hey can you please</span> help me triage this incoming tier-3 enterprise IT ticket? <span className="line-through text-rose-600 bg-rose-100 px-1 rounded font-medium">act as an expert</span> cloud infrastructure triage engineer with over 15 years experience.
               </p>
               <p>
-                <span className="line-through text-rose-400 bg-rose-950/40 px-1 rounded">basically</span> what I am trying to achieve here is to classify whether this server fault is hardware related, networking related, or software related. <span className="line-through text-rose-400 bg-rose-950/40 px-1 rounded">i really need you to make sure</span> that you look at the logs very carefully before replying.
+                <span className="line-through text-rose-600 bg-rose-100 px-1 rounded font-medium">basically</span> what I am trying to achieve here is to classify whether this server fault is hardware related, networking related, or software related. <span className="line-through text-rose-600 bg-rose-100 px-1 rounded font-medium">i really need you to make sure</span> that you look at the logs very carefully before replying.
               </p>
               <p>
-                <span className="line-through text-rose-400 bg-rose-950/40 px-1 rounded">in order to</span> produce an accurate response, make sure you double check Kubernetes pod restarts and network timeouts. Please return the answer <span className="line-through text-rose-400 bg-rose-950/40 px-1 rounded">with as much detail as humanly possible</span> because our SRE leadership wants an exhaustive explanation of every potential root cause under the sun.
+                <span className="line-through text-rose-600 bg-rose-100 px-1 rounded font-medium">in order to</span> produce an accurate response, make sure you double check Kubernetes pod restarts and network timeouts. Please return the answer <span className="line-through text-rose-600 bg-rose-100 px-1 rounded font-medium">with as much detail as humanly possible</span> because our SRE leadership wants an exhaustive explanation of every potential root cause under the sun.
               </p>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5 text-rose-400">
+          <div className="pt-2 border-t border-rose-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5 text-rose-700 font-medium">
               <span className="w-2 h-2 rounded-full bg-rose-500"></span>
               <span>Red strikethroughs indicate tokens safe to delete.</span>
             </span>
-            <span className="text-rose-300 font-bold">-{tokensSaved} tokens identified</span>
+            <span className="text-rose-700 font-bold">-{tokensSaved} tokens identified</span>
           </div>
         </div>
 
         {/* Right: AFTER Optimized Prompt */}
-        <div className="p-4 rounded-xl bg-slate-900 border border-emerald-950/80 shadow-xl space-y-2 flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-sm space-y-2 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-400 uppercase">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 uppercase">
                   AFTER
                 </span>
-                <span className="text-sm font-bold text-white">Optimized Prompt</span>
+                <span className="text-sm font-bold text-slate-900">Optimized Prompt</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-900">
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   {ltTokens} Tokens (-{pctSaved}%)
                 </span>
                 <button
                   onClick={handleCopy}
-                  className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-[11px] flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 hover:text-slate-900 text-[11px] flex items-center gap-1 cursor-pointer shadow-sm"
                 >
-                  {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-500" />}
                   <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
             </div>
 
             {/* Code / Text Block with Green Tint */}
-            <div className="p-3 rounded-lg bg-slate-950 border border-emerald-950/80 text-xs font-mono text-emerald-200 leading-relaxed max-h-56 overflow-y-auto whitespace-pre-wrap">
+            <div className="p-3.5 rounded-xl bg-emerald-50/20 border border-emerald-200 text-xs font-mono text-slate-900 leading-relaxed max-h-56 overflow-y-auto whitespace-pre-wrap">
 {optDisplay}
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <div className="pt-2 border-t border-emerald-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span>Green highlights show structured, high-accuracy replacements.</span>
             </span>
-            <span className="text-emerald-300 font-bold">97.8% Semantic Density</span>
+            <span className="text-emerald-700 font-bold">97.8% Semantic Density</span>
           </div>
         </div>
       </div>
 
       {/* 2. Filler Words & Anti-Patterns Purged (Matches Image 5 Middle) */}
-      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 font-mono">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3 font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
           <div>
-            <h3 className="text-sm font-bold text-white">
+            <h3 className="text-sm font-bold text-slate-900">
               Filler Words &amp; Anti-Patterns Purged
             </h3>
-            <p className="text-[11px] text-slate-400 font-sans mt-0.5">
+            <p className="text-[11px] text-slate-500 font-sans mt-0.5">
               A beginner-friendly guide to phrases removed and how to write prompts more efficiently.
             </p>
           </div>
@@ -171,20 +171,20 @@ Triage enterprise IT server incidents. Classify category into [hardware|networki
           <div className="flex items-center gap-2 text-xs">
             <button
               onClick={() => setFilterMode('all')}
-              className={`px-3 py-1 rounded-lg border text-xs cursor-pointer transition-colors ${
+              className={`px-3 py-1 rounded-lg border text-xs cursor-pointer transition-colors shadow-sm ${
                 filterMode === 'all'
-                  ? 'bg-blue-950 border-cyan-500 text-cyan-300 font-bold'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 border-blue-600 text-white font-bold'
+                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900'
               }`}
             >
               All Patterns (4)
             </button>
             <button
               onClick={() => setFilterMode('major')}
-              className={`px-3 py-1 rounded-lg border text-xs cursor-pointer transition-colors ${
+              className={`px-3 py-1 rounded-lg border text-xs cursor-pointer transition-colors shadow-sm ${
                 filterMode === 'major'
-                  ? 'bg-blue-950 border-cyan-500 text-cyan-300 font-bold'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 border-blue-600 text-white font-bold'
+                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900'
               }`}
             >
               Tokens &gt; 5
@@ -196,26 +196,26 @@ Triage enterprise IT server incidents. Classify category into [hardware|networki
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-[10px] text-slate-400 uppercase">
+              <tr className="border-b border-slate-200 bg-slate-50 text-[10px] text-slate-500 uppercase">
                 <th className="py-2.5 px-3">PHRASES REMOVED</th>
                 <th className="py-2.5 px-3">WHY AVOID THIS</th>
                 <th className="py-2.5 px-3">WHAT TO USE INSTEAD</th>
                 <th className="py-2.5 px-3 text-right">TOKENS SAVED</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {tableRows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-900/40 transition-colors">
-                  <td className="py-3 px-3 text-rose-300 font-semibold whitespace-nowrap">
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-3 text-rose-700 font-semibold whitespace-nowrap">
                     <span className="line-through">{row.phrase}</span>
                   </td>
-                  <td className="py-3 px-3 text-slate-300 font-sans max-w-sm leading-relaxed">
+                  <td className="py-3 px-3 text-slate-600 font-sans max-w-sm leading-relaxed">
                     {row.why}
                   </td>
-                  <td className="py-3 px-3 text-emerald-400 font-bold">
+                  <td className="py-3 px-3 text-emerald-700 font-bold">
                     {row.instead}
                   </td>
-                  <td className="py-3 px-3 text-right text-emerald-300 font-bold whitespace-nowrap">
+                  <td className="py-3 px-3 text-right text-emerald-700 font-bold whitespace-nowrap">
                     {row.saved}
                   </td>
                 </tr>
@@ -226,20 +226,20 @@ Triage enterprise IT server incidents. Classify category into [hardware|networki
       </div>
 
       {/* 3. Model Consumption Cost Estimation Comparison (Matches Image 5 Bottom) */}
-      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 font-mono">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3 font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
           <div>
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-400" />
+            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-600" />
               <span>Model Consumption Cost Estimation Comparison</span>
             </h4>
-            <p className="text-[11px] text-slate-400 font-sans mt-0.5">
+            <p className="text-[11px] text-slate-500 font-sans mt-0.5">
               Calculated against published frontier API pricing tiers based on current prompt revisions.
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs bg-slate-950 p-1 rounded-lg border border-slate-800">
-            <span className="text-[10px] text-slate-500 uppercase px-2">Simulation Volume:</span>
+          <div className="flex items-center gap-1.5 text-xs bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <span className="text-[10px] text-slate-500 uppercase px-2 font-bold">Simulation Volume:</span>
             {['1k Runs', '50k Runs', '1M Runs'].map((vol) => {
               const key = vol.split(' ')[0];
               const isSelected = simVolume === key;
@@ -249,8 +249,8 @@ Triage enterprise IT server incidents. Classify category into [hardware|networki
                   onClick={() => setSimVolume(key)}
                   className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-800 text-cyan-300 font-bold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {vol}
@@ -262,38 +262,38 @@ Triage enterprise IT server incidents. Classify category into [hardware|networki
 
         {/* Model Cost Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Claude 3.5 Sonnet */}
-          <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          {/* Claude 3.5 Sonnet (Orange / Coral) */}
+          <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/90 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="px-2 py-1 rounded text-xs font-bold bg-amber-950 border border-amber-800 text-amber-400">
+              <span className="px-2 py-1 rounded text-xs font-bold bg-orange-100 border border-orange-300 text-orange-800">
                 C3.5
               </span>
               <div>
-                <div className="text-xs font-bold text-white">Claude 3.5 Sonnet</div>
-                <div className="text-[10px] text-slate-400">Anthropic • $3.00 / 1M Input Tokens</div>
+                <div className="text-xs font-bold text-slate-900">Claude 3.5 Sonnet</div>
+                <div className="text-[10px] text-slate-500">Anthropic • $3.00 / 1M Input Tokens</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-emerald-400 font-bold text-sm">
+              <div className="text-orange-700 font-bold text-sm">
                 -${(5.70 * getSimMultiplier()).toFixed(2)} / {simVolume} runs
               </div>
               <div className="text-[10px] text-slate-500">Net API Cost Reduction</div>
             </div>
           </div>
 
-          {/* ChatGPT GPT-4o */}
-          <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          {/* ChatGPT GPT-4o (Emerald Green) */}
+          <div className="p-3.5 rounded-xl bg-emerald-50/40 border border-emerald-200/90 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="px-2 py-1 rounded text-xs font-bold bg-indigo-950 border border-indigo-800 text-indigo-400">
+              <span className="px-2 py-1 rounded text-xs font-bold bg-emerald-100 border border-emerald-300 text-emerald-800">
                 4o
               </span>
               <div>
-                <div className="text-xs font-bold text-white">ChatGPT (GPT-4o)</div>
-                <div className="text-[10px] text-slate-400">OpenAI • $2.50 / 1M Input Tokens</div>
+                <div className="text-xs font-bold text-slate-900">ChatGPT (GPT-4o)</div>
+                <div className="text-[10px] text-slate-500">OpenAI • $2.50 / 1M Input Tokens</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-emerald-400 font-bold text-sm">
+              <div className="text-emerald-700 font-bold text-sm">
                 -${(4.60 * getSimMultiplier()).toFixed(2)} / {simVolume} runs
               </div>
               <div className="text-[10px] text-slate-500">Net API Cost Reduction</div>

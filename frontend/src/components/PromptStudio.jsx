@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles, Copy, Check, FileText, Paperclip, 
   Trash2, ArrowRight, ShieldCheck, AlertCircle, CheckCircle2, 
-  RefreshCw, Zap, Globe, Lightbulb, Mic, MicOff, Volume2, Square,
-  ExternalLink, Laptop, Download, Bot, Info
+  RefreshCw, Zap, Globe, Lightbulb, Mic, MicOff, Square,
+  ExternalLink, Laptop, Download, Bot
 } from 'lucide-react';
 
 export default function PromptStudio({
@@ -15,8 +15,7 @@ export default function PromptStudio({
   result,
   loading,
   setActiveTab,
-  currentUser,
-  onOpenAssumptionsModal
+  currentUser
 }) {
   const [activeVariantTab, setActiveVariantTab] = useState('lt'); // 'lt' or 'hc'
   const [suggestionLang, setSuggestionLang] = useState('en');
@@ -33,7 +32,6 @@ export default function PromptStudio({
   const [isListening, setIsListening] = useState(false);
   const [voiceLang, setVoiceLang] = useState('mr-IN'); // Default to Marathi (India)
   const [interimTranscript, setInterimTranscript] = useState('');
-  const [audioTranscribing, setAudioTranscribing] = useState(false);
   const recognitionRef = useRef(null);
 
   const voiceLanguages = [
@@ -152,32 +150,6 @@ export default function PromptStudio({
     }
   };
 
-  // Upload Pre-Recorded Audio / Voice Note File
-  const handleAudioFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setAudioTranscribing(true);
-    const formData = new FormData();
-    formData.append('audio', file);
-    formData.append('language', voiceLang);
-
-    try {
-      const res = await fetch('/api/voice/transcribe', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Voice transcription failed');
-      
-      setRawPrompt((prev) => (prev ? prev.trim() + ' ' + data.text : data.text));
-    } catch (err) {
-      alert(`Voice note transcription error: ${err.message}`);
-    } finally {
-      setAudioTranscribing(false);
-    }
-  };
-
   const handleCopy = (text, key) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -218,15 +190,22 @@ export default function PromptStudio({
   
   // Calculate dynamic metrics for the active tab (LT vs HC)
   const isLT = activeVariantTab === 'lt';
+  const origTokens = result?.metrics?.originalTokens || rawTokens;
+  const rawLtTokens = result?.variants?.lowToken?.tokenCount ?? origTokens;
+  const safeLtTokens = Math.min(rawLtTokens, origTokens);
+
   const currentTokens = isLT 
-    ? (result?.variants?.lowToken?.tokenCount || 0) 
+    ? safeLtTokens 
     : (result?.variants?.highContext?.tokenCount || 0);
 
-  const origTokens = result?.metrics?.originalTokens || rawTokens;
-  const tokensSaved = origTokens - currentTokens;
+  const tokensSaved = isLT ? Math.max(0, origTokens - safeLtTokens) : (origTokens - currentTokens);
   const isTokenReduction = tokensSaved > 0;
   const isZeroDelta = tokensSaved === 0;
-  const dynamicPct = origTokens > 0 ? Math.abs(Math.round((tokensSaved / origTokens) * 1000) / 10) : 0;
+  const dynamicPct = origTokens > 0 
+    ? (isLT 
+        ? Math.round((tokensSaved / origTokens) * 1000) / 10
+        : Math.abs(Math.round(((currentTokens - origTokens) / origTokens) * 1000) / 10))
+    : 0;
 
   const detectedLangCode = result?.multilingual?.detectedLanguage?.code || 'en';
   const detectedLangName = result?.multilingual?.detectedLanguage?.name || 'Regional Language';
@@ -238,13 +217,16 @@ export default function PromptStudio({
   const nativePrompt = activeVariant?.nativePrompt || 
                        (isLT ? result?.multilingual?.backTranslatedLT : result?.multilingual?.backTranslatedHC) || 
                        '';
-  const englishPrompt = activeVariant?.englishPrompt || activeVariant?.prompt || '';
+  const englishPrompt = (isLT && rawLtTokens > origTokens)
+    ? (result?.rawPrompt || rawPrompt || '')
+    : (activeVariant?.englishPrompt || activeVariant?.prompt || '');
   
   const nativeTokenCount = activeVariant?.nativeTokenCount || 
                           (isLT ? result?.multilingual?.tokenComparison?.nativeLTTokens : result?.multilingual?.tokenComparison?.nativeHCTokens) || 
                           Math.max(1, Math.round(nativePrompt.length / 2));
-  const englishTokenCount = activeVariant?.englishTokenCount || activeVariant?.tokenCount || 
-                           Math.max(1, Math.round(englishPrompt.length / 4));
+  const rawEngTokens = activeVariant?.englishTokenCount || activeVariant?.tokenCount || 
+                       Math.max(1, Math.round(englishPrompt.length / 4));
+  const englishTokenCount = isLT ? Math.min(rawEngTokens, origTokens) : rawEngTokens;
 
   const additionalSavingsPct = nativeTokenCount > 0 
     ? Math.max(0, Math.round(((nativeTokenCount - englishTokenCount) / nativeTokenCount) * 1000) / 10)
@@ -407,17 +389,17 @@ export default function PromptStudio({
   return (
     <div className="max-w-5xl mx-auto space-y-6 font-sans">
       {/* Page Title */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200/90">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Prompt Optimizer</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Prompt Optimizer</h1>
+          <p className="text-sm text-slate-500">
             Write or speak your prompt in any regional language to generate clean, token-efficient versions for your selected AI platform.
           </p>
         </div>
 
         <button
           onClick={loadExample}
-          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+          className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
         >
           Load Regional Example (मराठी)
         </button>
@@ -425,39 +407,39 @@ export default function PromptStudio({
 
       {/* Multilingual / Lingua Notice */}
       {isIndicScript && (
-        <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-800/80 text-blue-200 text-xs flex items-center justify-between gap-3">
+        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center justify-between gap-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
             <span>
               Regional script detected: PromptForge converts to English to eliminate the heavy UTF-8 byte-pair token penalty.
             </span>
           </div>
-          <span className="font-semibold text-emerald-400">Saves 70% – 90% tokens</span>
+          <span className="font-bold text-emerald-700">Saves 70% – 90% tokens</span>
         </div>
       )}
 
       {/* Main Workspace Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-6 space-y-5">
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-[0_10px_25px_-5px_rgba(203,213,225,0.45),0_8px_10px_-6px_rgba(203,213,225,0.35)] p-5 sm:p-6 space-y-5">
         {/* 1. Prompt Input Area with Voice Input Toolbar */}
         <div className="space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <label className="font-semibold text-slate-300">
+            <label className="font-bold text-slate-800">
               1. Enter or Speak Your Prompt
             </label>
 
             {/* Voice Input Controls Bar */}
             <div className="flex items-center gap-2">
               {/* Regional Voice Language Selector */}
-              <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-                <span className="text-[11px] text-slate-400 hidden sm:inline">Voice Language:</span>
+              <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                <span className="text-[11px] text-slate-500 hidden sm:inline">Voice Language:</span>
                 <select
                   value={voiceLang}
                   onChange={(e) => setVoiceLang(e.target.value)}
                   disabled={isListening}
-                  className="bg-transparent text-xs font-semibold text-blue-400 focus:outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-semibold text-blue-600 focus:outline-none cursor-pointer"
                 >
                   {voiceLanguages.map((vl) => (
-                    <option key={vl.code} value={vl.code} className="bg-slate-900 text-slate-200">
+                    <option key={vl.code} value={vl.code} className="bg-white text-slate-800">
                       {vl.name}
                     </option>
                   ))}
@@ -471,7 +453,7 @@ export default function PromptStudio({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-sm ${
                   isListening
                     ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/50'
-                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
                 }`}
                 title={isListening ? 'Click to stop listening' : 'Click to start voice recognition'}
               >
@@ -487,53 +469,30 @@ export default function PromptStudio({
                   </>
                 )}
               </button>
-
-              {/* Upload Recorded Voice Note / Audio */}
-              <label 
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer transition-colors"
-                title="Upload audio file (.wav, .mp3, .m4a, .webm)"
-              >
-                <Volume2 className="w-3.5 h-3.5 text-blue-400" />
-                <span className="hidden sm:inline">Upload Audio</span>
-                <input
-                  type="file"
-                  accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg"
-                  onChange={handleAudioFileUpload}
-                  className="hidden"
-                />
-              </label>
             </div>
           </div>
 
           {/* Active Voice Listening Banner */}
           {isListening && (
-            <div className="p-3 rounded-xl bg-gradient-to-r from-rose-950/60 to-slate-900 border border-rose-800/80 text-xs text-rose-200 flex items-center justify-between gap-3 shadow-md animate-fadeIn">
+            <div className="p-3 rounded-xl bg-gradient-to-r from-rose-50 to-slate-50 border border-rose-200 text-xs text-rose-900 flex items-center justify-between gap-3 shadow-md animate-fadeIn">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
                 </span>
-                <span className="font-semibold text-rose-300 whitespace-nowrap">
+                <span className="font-bold text-rose-800 whitespace-nowrap">
                   Listening in {voiceLanguages.find(v => v.code === voiceLang)?.label || 'Regional Voice'}:
                 </span>
-                <span className="text-white italic truncate max-w-md">
+                <span className="text-slate-800 italic truncate max-w-md font-medium">
                   {interimTranscript ? `"${interimTranscript}"` : 'बोलणे सुरू करा (Speak now)...'}
                 </span>
               </div>
               <button
                 onClick={toggleVoiceRecognition}
-                className="px-2 py-0.5 rounded bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-[11px] font-semibold transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold transition-colors cursor-pointer shadow-sm"
               >
                 Done
               </button>
-            </div>
-          )}
-
-          {/* Audio Transcribing Loading Indicator */}
-          {audioTranscribing && (
-            <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-800 text-xs text-blue-300 flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-              <span>Transcribing regional audio file with Google Speech Recognition...</span>
             </div>
           )}
 
@@ -542,14 +501,14 @@ export default function PromptStudio({
             onChange={(e) => setRawPrompt(e.target.value)}
             rows={5}
             placeholder={`Type or click 'Voice Input' to speak in ${voiceLanguages.find(v => v.code === voiceLang)?.label || 'Marathi / Hindi / English'}...`}
-            className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl p-3.5 text-sm leading-relaxed focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600 resize-y"
+            className="w-full bg-[#f8fafc] text-slate-900 border border-slate-200 rounded-xl p-3.5 text-sm leading-relaxed focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400 resize-y shadow-inner"
           />
 
           {/* Attachment Controls */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium cursor-pointer transition-colors">
-                <Paperclip className="w-3.5 h-3.5 text-blue-400" />
+              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer transition-colors border border-slate-200 shadow-sm">
+                <Paperclip className="w-3.5 h-3.5 text-blue-600" />
                 <span>Attach Document (PDF, Word, Excel, JSON)</span>
                 <input 
                   type="file" 
@@ -560,17 +519,17 @@ export default function PromptStudio({
               </label>
 
               {fileConverting && (
-                <span className="text-blue-400 flex items-center gap-1">
+                <span className="text-blue-600 flex items-center gap-1 font-medium">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Converting file to low-token format...</span>
                 </span>
               )}
 
               {attachedFile && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-950/60 border border-blue-800 text-blue-300 font-medium">
-                  <FileText className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 font-semibold shadow-sm">
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
                   <span>{attachedFile.filename}</span>
-                  <button onClick={() => setAttachedFile(null)} className="text-slate-400 hover:text-rose-400 ml-1">
+                  <button onClick={() => setAttachedFile(null)} className="text-slate-400 hover:text-rose-600 ml-1">
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
@@ -585,7 +544,7 @@ export default function PromptStudio({
               {rawPrompt.length > 0 && (
                 <button
                   onClick={() => setRawPrompt('')}
-                  className="text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                  className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer font-medium"
                 >
                   Clear text
                 </button>
@@ -595,33 +554,46 @@ export default function PromptStudio({
         </div>
 
         {/* 2. Target AI Platform Selector */}
-        <div className="space-y-2 pt-2 border-t border-slate-800">
-          <label className="text-xs font-semibold text-slate-300 block">
+        <div className="space-y-2 pt-2 border-t border-slate-100">
+          <label className="text-xs font-bold text-slate-800 block">
             2. Select Target AI Platform
           </label>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {providers.map((p) => {
               const isSelected = targetProvider === p.id;
+              const isClaude = p.id === 'claude-3-5-sonnet';
+              const isChatGPT = p.id === 'gpt-4o';
+              
+              let activeRing = 'bg-blue-50/70 border-blue-600 text-slate-900 shadow-sm ring-1 ring-blue-500/30';
+              let activeDot = 'border-blue-600 bg-blue-600';
+              if (isClaude) {
+                activeRing = 'bg-orange-50/70 border-orange-500 text-slate-900 shadow-sm ring-1 ring-orange-400/30';
+                activeDot = 'border-orange-500 bg-orange-500';
+              } else if (isChatGPT) {
+                activeRing = 'bg-emerald-50/70 border-emerald-500 text-slate-900 shadow-sm ring-1 ring-emerald-400/30';
+                activeDot = 'border-emerald-500 bg-emerald-500';
+              }
+
               return (
                 <button
                   key={p.id}
                   onClick={() => setTargetProvider(p.id)}
                   className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-600/10 border-blue-500 text-white ring-1 ring-blue-500/30'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                      ? activeRing
+                      : 'bg-[#f8fafc] border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-white hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm text-white">{p.name}</span>
-                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                      isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-700'
+                    <span className="font-bold text-sm text-slate-900">{p.name}</span>
+                    <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                      isSelected ? activeDot : 'border-slate-300 bg-white'
                     }`}>
                       {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 leading-normal">{p.desc}</p>
+                  <p className="text-xs text-slate-500 leading-normal">{p.desc}</p>
                 </button>
               );
             })}
@@ -633,7 +605,7 @@ export default function PromptStudio({
           <button
             onClick={() => onOptimize()}
             disabled={loading || !rawPrompt.trim()}
-            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -651,38 +623,38 @@ export default function PromptStudio({
 
         {/* 3.5 External AI Launcher (Rendered AFTER clicking optimize button, for the chosen target AI ONLY) */}
         {result && (
-          <div className="pt-4 border-t border-slate-800/80 space-y-3 animate-fadeIn">
+          <div className="pt-4 border-t border-slate-100 space-y-3 animate-fadeIn">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <ExternalLink className="w-4 h-4 text-blue-400" />
-                <span className="text-xs font-semibold text-slate-200">
+                <ExternalLink className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-bold text-slate-900">
                   Open in {isClaude ? 'Anthropic Claude' : isChatGPT ? 'OpenAI ChatGPT' : 'External AI'}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-700/60 text-emerald-400 flex items-center gap-1">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-1 shadow-sm">
                   <Check className="w-3 h-3" />
                   Optimized Prompt Only
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400">
-                Target AI: <strong className="text-slate-300">{isClaude ? 'Anthropic Claude' : isChatGPT ? 'OpenAI ChatGPT' : 'General AI'}</strong> • Auto-redirects to install if app missing
+              <span className="text-[11px] text-slate-500">
+                Target AI: <strong className="text-slate-800">{isClaude ? 'Anthropic Claude' : isChatGPT ? 'OpenAI ChatGPT' : 'General AI'}</strong> • Auto-redirects to install if app missing
               </span>
             </div>
 
             {/* ONLY Claude when Anthropic Claude is the chosen target AI */}
             {isClaude && (
-              <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-900/40 hover:border-amber-500/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm ring-1 ring-amber-500/10">
+              <div className="p-4 rounded-xl bg-orange-50/50 border border-orange-200 hover:border-orange-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-950/80 border border-amber-700/60 flex items-center justify-center text-amber-400 font-bold shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-orange-100 border border-orange-300 flex items-center justify-center text-orange-700 font-bold shrink-0 shadow-sm">
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-white">Anthropic Claude</h4>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-800/60 text-amber-300 font-semibold">
+                      <h4 className="text-sm font-bold text-slate-900">Anthropic Claude</h4>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-orange-100 border border-orange-300 text-orange-800 font-bold">
                         claude-3-5-sonnet
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       Open optimized XML-structured prompt directly in Claude Web Browser or Desktop App
                     </p>
                   </div>
@@ -693,13 +665,13 @@ export default function PromptStudio({
                     type="button"
                     onClick={() => handleLaunchExternal('claude', 'browser')}
                     disabled={loading || (launchingExternal?.step === 'optimizing')}
-                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold transition-all cursor-pointer hover:border-slate-600 disabled:opacity-50 shadow-sm"
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-semibold transition-all cursor-pointer hover:border-slate-300 disabled:opacity-50 shadow-sm"
                     title="Open Claude in Web Browser with pre-filled optimized prompt"
                   >
                     {launchingExternal?.platform === 'claude' && launchingExternal?.mode === 'browser' ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-orange-600" />
                     ) : (
-                      <Globe className="w-3.5 h-3.5 text-amber-400" />
+                      <Globe className="w-3.5 h-3.5 text-orange-600" />
                     )}
                     <span>Claude Web (Browser)</span>
                   </button>
@@ -708,13 +680,13 @@ export default function PromptStudio({
                     type="button"
                     onClick={() => handleLaunchExternal('claude', 'app')}
                     disabled={loading || (launchingExternal?.step === 'optimizing')}
-                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-amber-950/60 hover:bg-amber-900/70 text-amber-200 border border-amber-700/80 text-xs font-semibold transition-all cursor-pointer hover:border-amber-600 disabled:opacity-50 shadow-sm"
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white border border-orange-600 text-xs font-semibold transition-all cursor-pointer shadow-sm disabled:opacity-50"
                     title="Open Claude Desktop App directly (redirects to download if not installed)"
                   >
                     {launchingExternal?.platform === 'claude' && launchingExternal?.mode === 'app' ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
                     ) : (
-                      <Laptop className="w-3.5 h-3.5 text-amber-400" />
+                      <Laptop className="w-3.5 h-3.5 text-white" />
                     )}
                     <span>Claude Desktop App</span>
                   </button>
@@ -724,19 +696,19 @@ export default function PromptStudio({
 
             {/* ONLY ChatGPT when OpenAI ChatGPT is the chosen target AI */}
             {isChatGPT && (
-              <div className="p-4 rounded-xl bg-slate-950/80 border border-emerald-900/40 hover:border-emerald-500/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm ring-1 ring-emerald-500/10">
+              <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 hover:border-emerald-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center text-emerald-400 font-bold shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 font-bold shrink-0 shadow-sm">
                     <Bot className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-white">OpenAI ChatGPT</h4>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold">
+                      <h4 className="text-sm font-bold text-slate-900">OpenAI ChatGPT</h4>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
                         gpt-4o
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       Open optimized token-reduced prompt directly in ChatGPT Web Browser or Desktop App
                     </p>
                   </div>
@@ -747,13 +719,13 @@ export default function PromptStudio({
                     type="button"
                     onClick={() => handleLaunchExternal('chatgpt', 'browser')}
                     disabled={loading || (launchingExternal?.step === 'optimizing')}
-                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold transition-all cursor-pointer hover:border-slate-600 disabled:opacity-50 shadow-sm"
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-semibold transition-all cursor-pointer hover:border-slate-300 disabled:opacity-50 shadow-sm"
                     title="Open ChatGPT in Web Browser with pre-filled optimized prompt"
                   >
                     {launchingExternal?.platform === 'chatgpt' && launchingExternal?.mode === 'browser' ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
                     ) : (
-                      <Globe className="w-3.5 h-3.5 text-blue-400" />
+                      <Globe className="w-3.5 h-3.5 text-blue-600" />
                     )}
                     <span>ChatGPT Web (Browser)</span>
                   </button>
@@ -762,13 +734,13 @@ export default function PromptStudio({
                     type="button"
                     onClick={() => handleLaunchExternal('chatgpt', 'app')}
                     disabled={loading || (launchingExternal?.step === 'optimizing')}
-                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-200 border border-emerald-700/80 text-xs font-semibold transition-all cursor-pointer hover:border-emerald-600 disabled:opacity-50 shadow-sm"
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 text-xs font-semibold transition-all cursor-pointer shadow-sm disabled:opacity-50"
                     title="Open ChatGPT Desktop App directly (redirects to download if not installed)"
                   >
                     {launchingExternal?.platform === 'chatgpt' && launchingExternal?.mode === 'app' ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
                     ) : (
-                      <Laptop className="w-3.5 h-3.5 text-emerald-400" />
+                      <Laptop className="w-3.5 h-3.5 text-white" />
                     )}
                     <span>ChatGPT Desktop App</span>
                   </button>
@@ -780,18 +752,18 @@ export default function PromptStudio({
             {isGeneral && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* OpenAI ChatGPT Block */}
-                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-emerald-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center text-emerald-400 font-bold text-xs">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 font-bold text-xs shadow-sm">
                         <Bot className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-semibold text-white">OpenAI ChatGPT</h4>
-                        <p className="text-[10px] text-slate-400">Token-reduced English prompt</p>
+                        <h4 className="text-xs font-bold text-slate-900">OpenAI ChatGPT</h4>
+                        <p className="text-[10px] text-slate-500">Token-reduced English prompt</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-emerald-400">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
                       gpt-4o
                     </span>
                   </div>
@@ -801,10 +773,10 @@ export default function PromptStudio({
                       type="button"
                       onClick={() => handleLaunchExternal('chatgpt', 'browser')}
                       disabled={loading || (launchingExternal?.step === 'optimizing')}
-                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs font-medium transition-all cursor-pointer hover:border-slate-600 disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-semibold transition-all cursor-pointer shadow-sm hover:border-slate-300 disabled:opacity-50"
                       title="Open ChatGPT in Web Browser with pre-filled optimized prompt"
                     >
-                      <Globe className="w-3.5 h-3.5 text-blue-400" />
+                      <Globe className="w-3.5 h-3.5 text-blue-600" />
                       <span>ChatGPT Web</span>
                     </button>
 
@@ -812,28 +784,28 @@ export default function PromptStudio({
                       type="button"
                       onClick={() => handleLaunchExternal('chatgpt', 'app')}
                       disabled={loading || (launchingExternal?.step === 'optimizing')}
-                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-800/60 text-xs font-medium transition-all cursor-pointer hover:border-emerald-700 disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 text-xs font-semibold transition-all cursor-pointer shadow-sm disabled:opacity-50"
                       title="Open ChatGPT Desktop App directly (redirects to download if not installed)"
                     >
-                      <Laptop className="w-3.5 h-3.5 text-emerald-400" />
+                      <Laptop className="w-3.5 h-3.5 text-white" />
                       <span>ChatGPT App</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Anthropic Claude Block */}
-                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-orange-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-amber-950/80 border border-amber-700/60 flex items-center justify-center text-amber-400 font-bold text-xs">
+                      <div className="w-7 h-7 rounded-lg bg-orange-100 border border-orange-300 flex items-center justify-center text-orange-700 font-bold text-xs shadow-sm">
                         <Sparkles className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-semibold text-white">Anthropic Claude</h4>
-                        <p className="text-[10px] text-slate-400">Structured XML & directives</p>
+                        <h4 className="text-xs font-bold text-slate-900">Anthropic Claude</h4>
+                        <p className="text-[10px] text-slate-500">Structured XML & directives</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-400">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-orange-100 border border-orange-300 text-orange-800 font-bold">
                       claude-3-5
                     </span>
                   </div>
@@ -843,10 +815,10 @@ export default function PromptStudio({
                       type="button"
                       onClick={() => handleLaunchExternal('claude', 'browser')}
                       disabled={loading || (launchingExternal?.step === 'optimizing')}
-                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs font-medium transition-all cursor-pointer hover:border-slate-600 disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-semibold transition-all cursor-pointer shadow-sm hover:border-slate-300 disabled:opacity-50"
                       title="Open Claude in Web Browser with pre-filled optimized prompt"
                     >
-                      <Globe className="w-3.5 h-3.5 text-amber-400" />
+                      <Globe className="w-3.5 h-3.5 text-orange-600" />
                       <span>Claude Web</span>
                     </button>
 
@@ -854,10 +826,10 @@ export default function PromptStudio({
                       type="button"
                       onClick={() => handleLaunchExternal('claude', 'app')}
                       disabled={loading || (launchingExternal?.step === 'optimizing')}
-                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 border border-amber-800/60 text-xs font-medium transition-all cursor-pointer hover:border-amber-700 disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white border border-orange-600 text-xs font-semibold transition-all cursor-pointer shadow-sm disabled:opacity-50"
                       title="Open Claude Desktop App directly (redirects to download if not installed)"
                     >
-                      <Laptop className="w-3.5 h-3.5 text-amber-400" />
+                      <Laptop className="w-3.5 h-3.5 text-white" />
                       <span>Claude App</span>
                     </button>
                   </div>
@@ -867,19 +839,19 @@ export default function PromptStudio({
 
             {/* Real-time Launch & Installation Fallback Notification */}
             {launchToast && (
-              <div className={`p-3 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-3 animate-fadeIn ${
+              <div className={`p-3.5 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-3 animate-fadeIn shadow-sm ${
                 launchToast.isWarning
-                  ? 'bg-amber-950/60 border-amber-700/80 text-amber-200 shadow-md'
-                  : 'bg-emerald-950/60 border-emerald-700/80 text-emerald-200 shadow-md'
+                  ? 'bg-amber-50 border-amber-200 text-amber-800'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-800'
               }`}>
                 <div className="flex items-center gap-2.5 min-w-0">
                   {launchToast.isWarning ? (
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                   ) : (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   )}
                   <div className="min-w-0">
-                    <strong className="block font-semibold">{launchToast.title}</strong>
+                    <strong className="block font-bold">{launchToast.title}</strong>
                     <span className="text-[11px] opacity-90 break-words">{launchToast.message}</span>
                   </div>
                 </div>
@@ -890,7 +862,7 @@ export default function PromptStudio({
                       href={launchToast.downloadUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition-colors shadow-sm cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors shadow-sm cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download {launchToast.platformName}</span>
@@ -899,7 +871,7 @@ export default function PromptStudio({
                   <button
                     type="button"
                     onClick={() => setLaunchToast(null)}
-                    className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-slate-700 text-xs px-2 py-1 rounded hover:bg-slate-200 transition-colors cursor-pointer"
                   >
                     ✕ Close
                   </button>
@@ -912,44 +884,46 @@ export default function PromptStudio({
 
       {/* 4. Results Card (Rendered when optimization result is available) */}
       {result && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl p-5 sm:p-6 space-y-4 animate-fadeIn">
+        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-[0_10px_25px_-5px_rgba(203,213,225,0.45),0_8px_10px_-6px_rgba(203,213,225,0.35)] p-5 sm:p-6 space-y-4 animate-fadeIn">
           {/* Dynamic Token Comparison Banner responding to Active Variant Tab */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-sm shadow-inner font-mono">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[#f8fafc] border border-slate-200 text-sm shadow-inner font-mono">
             <div className="flex items-center gap-2 text-xs sm:text-sm">
-              <span className="text-slate-400">Raw Input:</span>
-              <strong className="text-slate-200">{origTokens} tokens</strong>
-              <span className="text-slate-500">→</span>
-              <span className="text-slate-400">
+              <span className="text-slate-500">Raw Input:</span>
+              <strong className="text-slate-900">{origTokens} tokens</strong>
+              <span className="text-slate-400">→</span>
+              <span className="text-slate-500">
                 {isLT ? 'Low-Token:' : 'High-Context:'}
               </span>
-              <strong className={isLT ? 'text-emerald-400' : 'text-blue-400'}>
+              <strong className={isLT ? 'text-emerald-600' : 'text-blue-600'}>
                 {englishTokenCount} tokens
               </strong>
             </div>
 
             <div className="flex items-center gap-2">
-              {isTokenReduction ? (
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-400 font-bold text-xs shadow-sm">
-                  {dynamicPct}% Tokens Saved
-                </span>
-              ) : (isZeroDelta && isLT) ? (
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-400 font-bold text-xs shadow-sm">
-                  0.0% (Optimal Baseline)
-                </span>
+              {isLT ? (
+                tokensSaved > 0 ? (
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs shadow-sm">
+                    {dynamicPct}% Tokens Saved
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs shadow-sm">
+                    0.0% (Optimal Baseline)
+                  </span>
+                )
               ) : (
-                <span className="px-2.5 py-1 rounded-lg bg-blue-950/80 border border-blue-800 text-blue-300 font-bold text-xs shadow-sm">
-                  +{englishTokenCount - origTokens} Tokens (+{dynamicPct}% Context)
-                </span>
+                englishTokenCount >= origTokens ? (
+                  <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs shadow-sm">
+                    +{englishTokenCount - origTokens} Tokens (+{dynamicPct}% Context)
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs shadow-sm">
+                    {dynamicPct}% Tokens Saved
+                  </span>
+                )
               )}
-              <button
-                type="button"
-                onClick={onOpenAssumptionsModal}
-                className="text-slate-400 hover:text-blue-400 text-xs hidden sm:flex items-center gap-1 font-sans transition-colors cursor-pointer"
-                title="Click to view stated tokenizer library & pricing assumptions"
-              >
-                <span>(~{englishTokenCount} tokens consumed by {providers.find(p => p.id === targetProvider)?.name})</span>
-                <Info className="w-3.5 h-3.5 text-blue-400" />
-              </button>
+              <span className="text-slate-500 text-xs hidden sm:inline font-sans">
+                (~{englishTokenCount} tokens consumed by {providers.find(p => p.id === targetProvider)?.name})
+              </span>
             </div>
           </div>
 
@@ -957,21 +931,21 @@ export default function PromptStudio({
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* Variant Tabs: Low-Token vs High-Context */}
-              <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 w-fit shadow-inner">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit shadow-sm">
                 {/* Low-Token Tab */}
                 <button
                   onClick={() => setActiveVariantTab('lt')}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
                     activeVariantTab === 'lt'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <span>Low-Token Version (Lean)</span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
                     activeVariantTab === 'lt'
-                      ? 'bg-slate-950/40 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   }`}>
                     {result.variants?.lowToken?.tokenCount} tok
                   </span>
@@ -982,15 +956,15 @@ export default function PromptStudio({
                   onClick={() => setActiveVariantTab('hc')}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
                     activeVariantTab === 'hc'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <span>High-Context Version (Detailed)</span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
                     activeVariantTab === 'hc'
-                      ? 'bg-slate-950/40 text-blue-200 border border-blue-400/30'
-                      : 'bg-slate-900 text-slate-300 border border-slate-700'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200 text-slate-700'
                   }`}>
                     {result.variants?.highContext?.tokenCount} tok
                   </span>
@@ -1000,13 +974,13 @@ export default function PromptStudio({
               {/* Right Controls: Regional Language Toggle & Copy Button */}
               <div className="flex items-center gap-2">
                 {isNonEnglish && (
-                  <div className="flex items-center p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs font-medium">
+                  <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium">
                     <button
                       onClick={() => setResultLang('en')}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         resultLang === 'en'
                           ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       English (Lean)
@@ -1016,7 +990,7 @@ export default function PromptStudio({
                       className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         resultLang === 'native'
                           ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       {detectedLangNative}
@@ -1028,10 +1002,10 @@ export default function PromptStudio({
                 {(isChatGPT || isGeneral) && (
                   <button
                     onClick={() => handleLaunchExternal('chatgpt', 'browser')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-medium transition-colors cursor-pointer border border-slate-700 shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-colors cursor-pointer border border-emerald-200 shadow-sm"
                     title="Launch directly in ChatGPT Web"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+                    <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
                     <span>ChatGPT Web</span>
                   </button>
                 )}
@@ -1039,26 +1013,26 @@ export default function PromptStudio({
                 {(isClaude || isGeneral) && (
                   <button
                     onClick={() => handleLaunchExternal('claude', 'browser')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-medium transition-colors cursor-pointer border border-slate-700 shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition-colors cursor-pointer border border-amber-200 shadow-sm"
                     title="Launch directly in Claude Web"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+                    <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
                     <span>Claude Web</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => handleCopy(displayedPrompt, 'clipboard')}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
                 >
                   {copiedKey === 'clipboard' ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Copied!</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">Copied!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5 text-slate-400" />
+                      <Copy className="w-3.5 h-3.5 text-slate-500" />
                       <span>Copy to Clipboard</span>
                     </>
                   )}
@@ -1067,18 +1041,18 @@ export default function PromptStudio({
             </div>
 
             {/* Prompt Output Well */}
-            <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-inner">
-              <pre className="p-4 sm:p-5 text-slate-200 text-xs leading-relaxed whitespace-pre-wrap font-mono max-h-80 overflow-y-auto selection:bg-blue-600/40">
+            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl overflow-hidden shadow-inner">
+              <pre className="p-4 sm:p-5 text-slate-900 text-xs leading-relaxed whitespace-pre-wrap font-mono max-h-80 overflow-y-auto selection:bg-blue-600/20">
 {displayedPrompt}
               </pre>
             </div>
 
-            <div className="text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2 pt-1 font-mono">
-              <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2 pt-1 font-mono">
+              <span className="flex items-center gap-1.5 text-emerald-700 font-semibold">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>100% Constraints Preserved (0% Loss)</span>
               </span>
-              <span className="text-[11px] text-slate-400 font-sans">
+              <span className="text-[11px] text-slate-500 font-sans">
                 {isLT 
                   ? 'Minimal directive with zero filler words.' 
                   : 'Structured role context, edge-case safety, and schema guardrails.'}
@@ -1087,15 +1061,15 @@ export default function PromptStudio({
           </div>
 
           {/* 5. Dynamic Localized Suggestions with On-The-Fly Language Switching */}
-          <div className="p-4 sm:p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-3.5 shadow-inner">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2 font-mono">
-                <Globe className="w-4 h-4 text-blue-400" />
+          <div className="p-4 sm:p-5 rounded-xl bg-[#f8fafc] border border-slate-200 space-y-3.5 shadow-inner">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2 font-mono">
+                <Globe className="w-4 h-4 text-blue-600" />
                 <span>{currentBundle.header}</span>
               </h4>
 
               {/* Language Pills for Suggestions */}
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px]">
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 text-[11px] shadow-sm">
                 <span className="text-slate-500 text-[10px] uppercase font-bold px-1.5 hidden sm:inline font-mono">
                   Language:
                 </span>
@@ -1114,7 +1088,7 @@ export default function PromptStudio({
                       className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         isCur
                           ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       {item.label}
@@ -1127,12 +1101,12 @@ export default function PromptStudio({
             {/* Fillers removed in the respective language */}
             {currentBundle.fillers?.length > 0 && (
               <div className="space-y-1.5">
-                <span className="text-xs text-slate-400 font-medium">
+                <span className="text-xs text-slate-600 font-medium">
                   {currentBundle.fillersLabel}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {currentBundle.fillers.map((f, i) => (
-                    <span key={i} className="px-2.5 py-1 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs font-mono">
+                    <span key={i} className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-mono font-medium shadow-sm">
                       "{typeof f === 'string' ? f.replace(/^['"]+|['"]+$/g, '') : f}"
                     </span>
                   ))}
@@ -1143,12 +1117,12 @@ export default function PromptStudio({
             {/* Redundancies removed */}
             {result.analysis?.redundancies?.length > 0 && (
               <div className="space-y-1.5 pt-1">
-                <span className="text-xs text-amber-400 font-medium">
+                <span className="text-xs text-amber-700 font-medium">
                   {currentBundle.redundanciesLabel || 'Redundant clauses removed:'}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {result.analysis.redundancies.map((r, i) => (
-                    <span key={i} className="px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-800 text-amber-300 text-xs font-mono">
+                    <span key={i} className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-mono font-medium shadow-sm">
                       "{r}"
                     </span>
                   ))}
@@ -1159,14 +1133,14 @@ export default function PromptStudio({
             {/* Actionable suggestions in the selected respective language */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
               {currentBundle.suggestions?.map((sug, i) => (
-                <div key={i} className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-1.5 text-xs">
-                  <div className="font-semibold text-blue-400 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                <div key={i} className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5 text-xs">
+                  <div className="font-bold text-blue-600 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                     <span>{sug.title}</span>
                   </div>
-                  <p className="text-slate-300 leading-relaxed text-[11px]">{sug.details}</p>
+                  <p className="text-slate-600 leading-relaxed text-[11px]">{sug.details}</p>
                   {sug.action && (
-                    <p className="text-emerald-400 text-[11px] font-medium pt-1 font-mono">
+                    <p className="text-emerald-700 text-[11px] font-bold pt-1 font-mono">
                       → {sug.action}
                     </p>
                   )}

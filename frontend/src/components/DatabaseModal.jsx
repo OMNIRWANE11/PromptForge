@@ -65,43 +65,43 @@ export default function DatabaseModal({ isOpen, onClose, onDbUpdated, onConnecti
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-fadeIn">
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-2xl p-6 space-y-4">
         {/* Modal Header with PromptForge Brand */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <PromptForgeLogo size="sm" variant="icon" />
             <div>
-              <h3 className="text-base font-semibold text-white font-mono flex items-center gap-1.5">
-                <span className="text-blue-400">&gt;_</span> PostgreSQL Database
+              <h3 className="text-base font-bold text-slate-900 font-mono flex items-center gap-1.5">
+                <span className="text-blue-600">&gt;_</span> PostgreSQL Database
               </h3>
-              <p className="text-xs text-slate-400">Connect PromptForge to local pgAdmin / PostgreSQL</p>
+              <p className="text-xs text-slate-500">Connect PromptForge to local pgAdmin / PostgreSQL</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-950 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Current Status Banner */}
-        <div className={`p-3 rounded-xl border text-xs flex items-center gap-2.5 ${
+        <div className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 shadow-sm ${
           dbStatus?.isPostgres 
-            ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-300' 
-            : 'bg-blue-950/30 border-blue-800/60 text-blue-300'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-blue-50 border-blue-200 text-blue-800'
         }`}>
           {dbStatus?.isPostgres ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-blue-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
           )}
           <div>
-            <div className="font-semibold font-mono">
+            <div className="font-bold font-mono">
               {dbStatus?.isPostgres ? 'PostgreSQL Connected' : 'Local Fallback Storage Active'}
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[11px] opacity-80">
               {dbStatus?.isPostgres 
                 ? `Saving all prompts to PostgreSQL (${dbStatus.host}/${dbStatus.database})` 
                 : 'Enter your pgAdmin password below to connect to PostgreSQL.'}
@@ -111,16 +111,16 @@ export default function DatabaseModal({ isOpen, onClose, onDbUpdated, onConnecti
 
         {/* Success Message */}
         {message && (
-          <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2 font-mono">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-mono shadow-sm">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{message}</span>
           </div>
         )}
 
         {/* Error Message */}
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2 font-mono">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 font-mono shadow-sm">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -129,78 +129,75 @@ export default function DatabaseModal({ isOpen, onClose, onDbUpdated, onConnecti
         <form onSubmit={handleConnect} className="space-y-3 text-xs font-mono">
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2 space-y-1">
-              <label className="text-slate-400 font-medium text-[11px] block">HOST</label>
+              <label className="text-slate-600 font-bold text-[11px] block">HOST</label>
               <input
                 type="text"
                 value={host}
                 onChange={(e) => setHost(e.target.value)}
                 placeholder="localhost"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-200 focus:outline-none focus:border-blue-500 shadow-inner"
+                className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-inner"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-slate-400 font-medium text-[11px] block">PORT</label>
+              <label className="text-slate-600 font-bold text-[11px] block">PORT</label>
               <input
                 type="text"
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
                 placeholder="5432"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-200 focus:outline-none focus:border-blue-500 shadow-inner"
+                className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-inner"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="text-slate-400 font-medium text-[11px] block">USERNAME</label>
+              <label className="text-slate-600 font-bold text-[11px] block">USERNAME</label>
               <input
                 type="text"
                 value={user}
                 onChange={(e) => setUser(e.target.value)}
                 placeholder="postgres"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-200 focus:outline-none focus:border-blue-500 shadow-inner"
+                className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-inner"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-slate-400 font-medium text-[11px] block">DATABASE NAME</label>
+              <label className="text-slate-600 font-bold text-[11px] block">DATABASE NAME</label>
               <input
                 type="text"
                 value={dbname}
                 onChange={(e) => setDbname(e.target.value)}
                 placeholder="promptforge"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-200 focus:outline-none focus:border-blue-500 shadow-inner"
+                className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-inner"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-slate-400 font-medium text-[11px] block">
-              PGADMIN / POSTGRESQL PASSWORD
-            </label>
+            <label className="text-slate-600 font-bold text-[11px] block">POSTGRESQL PASSWORD</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your PostgreSQL password"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-200 focus:outline-none focus:border-blue-500 shadow-inner"
+              placeholder="Enter your local PostgreSQL password..."
+              className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-inner"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 font-medium transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-800 hover:bg-slate-100 font-bold transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-blue-600/20 disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 cursor-pointer"
             >
-              {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-              <span>{loading ? 'Connecting...' : 'Save & Connect'}</span>
+              {loading ? 'Connecting...' : 'Connect PostgreSQL'}
             </button>
           </div>
         </form>

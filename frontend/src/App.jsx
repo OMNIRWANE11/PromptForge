@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import Navbar from './components/Navbar';
 import SidebarDrawer from './components/SidebarDrawer';
-import DatabaseModal from './components/DatabaseModal';
-import AssumptionsModal from './components/AssumptionsModal';
 import PromptStudio from './components/PromptStudio';
 import FileConverter from './components/FileConverter';
 import VersionDiffAudit from './components/VersionDiffAudit';
@@ -23,8 +21,6 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('studio');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isDbModalOpen, setIsDbModalOpen] = useState(false);
-  const [isAssumptionsModalOpen, setIsAssumptionsModalOpen] = useState(false);
   const [dbStatus, setDbStatus] = useState({
     connected: true,
     isPostgres: false,
@@ -109,7 +105,7 @@ export default function App() {
 
   // Step 2: Once authenticated, render clean, functional workspace
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600/30 selection:text-blue-200">
+    <div className="min-h-screen bg-[#edf2f9] text-slate-800 flex flex-col font-sans selection:bg-blue-600/20 selection:text-blue-800">
       {/* Slide-out Sidebar Drawer triggered by 3 lines hamburger menu */}
       <SidebarDrawer
         isOpen={isSidebarOpen}
@@ -118,37 +114,15 @@ export default function App() {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         onLogout={handleLogout}
-        onOpenDbModal={() => setIsDbModalOpen(true)}
-        dbStatus={dbStatus}
       />
 
-      {/* PostgreSQL / pgAdmin Connection Modal */}
-      <DatabaseModal
-        isOpen={isDbModalOpen}
-        onClose={() => {
-          setIsDbModalOpen(false);
-          refreshDbStatus();
-        }}
-        dbStatus={dbStatus}
-        onConnectionSuccess={() => refreshDbStatus()}
-      />
-
-      {/* Stated Assumptions & Tokenization Methodology Modal */}
-      <AssumptionsModal
-        isOpen={isAssumptionsModalOpen}
-        onClose={() => setIsAssumptionsModalOpen(false)}
-      />
-
-      {/* Clean Global Navbar with 3-Lines Menu Icon, Tabs, & PostgreSQL Pill */}
+      {/* Clean Global Navbar with 3-Lines Menu Icon & Tabs */}
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onToggleSidebar={() => setIsSidebarOpen(true)}
         currentUser={currentUser} 
         onLogout={handleLogout}
-        onOpenDbModal={() => setIsDbModalOpen(true)}
-        onOpenAssumptionsModal={() => setIsAssumptionsModalOpen(true)}
-        dbStatus={dbStatus}
       />
 
       {/* Main Workspace (No clutter, spacious, clean & focused) */}
@@ -165,7 +139,6 @@ export default function App() {
             loading={loadingOptimize}
             setActiveTab={setActiveTab}
             currentUser={currentUser}
-            onOpenAssumptionsModal={() => setIsAssumptionsModalOpen(true)}
           />
         )}
 
@@ -198,25 +171,18 @@ export default function App() {
       </main>
 
       {/* Sleek Professional Brand Footer with PromptForge Logo */}
-      <footer className="border-t border-slate-800/80 bg-slate-900/60 py-4 px-6 text-xs text-slate-400 mt-auto select-none backdrop-blur-sm">
+      <footer className="border-t border-slate-200/90 bg-white/80 py-4 px-6 text-xs text-slate-500 mt-auto select-none backdrop-blur-sm shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <PromptForgeLogo size="xs" variant="horizontal" />
-            <span className="text-slate-600 hidden sm:inline">•</span>
-            <span className="text-[11px] text-slate-400 font-mono tracking-widest hidden sm:inline uppercase">
+            <span className="text-slate-300 hidden sm:inline">•</span>
+            <span className="text-[11px] text-slate-500 font-mono tracking-widest hidden sm:inline uppercase font-medium">
               Optimize • Minimize • Maximize
             </span>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-mono text-slate-500">
-            <button
-              onClick={() => setIsAssumptionsModalOpen(true)}
-              className="hover:text-blue-400 text-slate-400 transition-colors cursor-pointer"
-            >
-              Methodology & Assumptions
-            </button>
-            <span>•</span>
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>All Systems Operational</span>
             </span>
             <span>•</span>

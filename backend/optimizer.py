@@ -118,7 +118,9 @@ def extract_redundancies_and_clean_intent(raw_prompt: str) -> Tuple[str, List[st
         (r'^(?:what\s+is|what\s+are)\s+([a-zA-Z0-9_\-\s]{2,40})(?:\?|$|\.)', r'Define \1'),
         (r'^(?:how\s+does\s+)(.+?)(?:\s+work)(?:\?|$|\.)', r'Explain \1 mechanics'),
         (r'^(?:how\s+to\s+)', 'Explain how to '),
-        (r'^(?:differences?\s+between\s+)(.+?)(?:\s+and\s+)(.+?)(?:\?|$|\.)', r'Compare \1 vs \2')
+        (r'^(?:differences?\s+between\s+)(.+?)(?:\s+and\s+)(.+?)(?:\?|$|\.)', r'Compare \1 vs \2'),
+        (r'^(?:create|generate|make|draw|render)\s+(?:an?\s+)?(?:image|photo|picture|drawing|portrait|illustration)\s+(?:of\s+)(.+)$', r'Generate \1 image'),
+        (r'^(?:image|photo|picture|drawing|portrait|illustration)\s+(?:of\s+)(.+)$', r'Generate \1 image')
     ]
     for q_pat, q_repl in q_patterns:
         if re.search(q_pat, working, re.IGNORECASE):

@@ -11,9 +11,7 @@ export default function SidebarDrawer({
   activeTab, 
   setActiveTab, 
   currentUser, 
-  onLogout, 
-  onOpenDbModal,
-  dbStatus 
+  onLogout 
 }) {
   const menuItems = [
     { 
@@ -48,22 +46,22 @@ export default function SidebarDrawer({
     <div className="fixed inset-0 z-50 flex">
       {/* Dimmed Backdrop */}
       <div 
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Slide-out Panel from the left */}
-      <aside className="relative w-80 max-w-[85vw] bg-slate-900 border-r border-slate-800 shadow-2xl flex flex-col justify-between p-5 z-10 animate-slideRight">
+      <aside className="relative w-80 max-w-[85vw] bg-white border-r border-slate-200 shadow-2xl flex flex-col justify-between p-5 z-10 animate-slideRight">
         {/* Top Header */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
               <PromptForgeLogo size="sm" variant="horizontal" showTagline={true} />
             </div>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Close Menu"
             >
               <X className="w-5 h-5" />
@@ -88,21 +86,21 @@ export default function SidebarDrawer({
                   }}
                   className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-blue-600/15 border border-blue-500/30 text-white shadow-sm'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border border-transparent'
+                      ? 'bg-blue-50/80 border border-blue-200 text-blue-900 shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
                   }`}
                 >
                   <div className={`p-2 rounded-lg mt-0.5 ${
-                    isActive ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                    isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
                   }`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold flex items-center justify-between">
+                    <div className="text-xs font-bold flex items-center justify-between text-slate-900">
                       <span>{item.label}</span>
-                      {isActive && <span className="w-2 h-2 rounded-full bg-blue-400"></span>}
+                      {isActive && <span className="w-2 h-2 rounded-full bg-blue-600"></span>}
                     </div>
-                    <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                    <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
                       {item.desc}
                     </div>
                   </div>
@@ -112,46 +110,20 @@ export default function SidebarDrawer({
           </nav>
         </div>
 
-        {/* Bottom Section: Database Setting & User Profile */}
-        <div className="space-y-3 pt-4 border-t border-slate-800">
-          {/* Database Setup Button */}
-          <button
-            onClick={() => {
-              onClose();
-              if (onOpenDbModal) onOpenDbModal();
-            }}
-            className={`w-full p-2.5 rounded-xl border flex items-center justify-between text-xs transition-colors cursor-pointer ${
-              dbStatus?.isPostgres
-                ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300 hover:bg-emerald-950/50'
-                : 'bg-slate-800/60 hover:bg-slate-800 border-slate-700 text-slate-300'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Database className={`w-4 h-4 ${dbStatus?.isPostgres ? 'text-emerald-400' : 'text-blue-400'}`} />
-              <div className="text-left">
-                <div className="font-semibold text-[11px]">
-                  {dbStatus?.isPostgres ? 'PostgreSQL Connected' : 'PostgreSQL Settings'}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  {dbStatus?.isPostgres ? 'Saving prompts live to DB' : 'Configure pgAdmin password'}
-                </div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400" />
-          </button>
-
+        {/* Bottom Section: User Profile */}
+        <div className="space-y-3 pt-4 border-t border-slate-100">
           {/* User Profile Bar */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                 {currentUser?.fullName?.charAt(0) || 'U'}
               </div>
               <div className="text-left">
-                <div className="font-medium text-white text-xs truncate max-w-[120px]">
+                <div className="font-bold text-slate-800 text-xs truncate max-w-[120px]">
                   {currentUser?.fullName || 'User'}
                 </div>
-                <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                  {currentUser?.email || ''}
+                <div className="text-[10px] text-slate-500 truncate max-w-[120px]">
+                  @{currentUser?.username || 'user'}
                 </div>
               </div>
             </div>
@@ -159,8 +131,8 @@ export default function SidebarDrawer({
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors"
                 title="Sign Out"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -171,4 +143,3 @@ export default function SidebarDrawer({
     </div>
   );
 }
-

@@ -182,23 +182,28 @@ def optimize_prompt_endpoint(req: OptimizationRequest):
         original_user_text=text
     )
     
-    # 5. Accurate Token Comparison Against Actual User Input (Accounts for Script Tax & Pivot Savings)
+    # 5. Strict Token Ceiling Invariant: Low-Token count must NEVER exceed user raw tokens
     user_raw_tokens = count_tokens_for_provider(text, req.targetProvider)
-    if lang_info["isNonEnglish"] and user_raw_tokens > opt_result["metrics"]["originalTokens"]:
-        lt_tokens = opt_result["variants"]["lowToken"]["tokenCount"]
-        hc_tokens = opt_result["variants"]["highContext"]["tokenCount"]
-        tokens_saved = max(0, user_raw_tokens - lt_tokens)
-        lt_pct_saved = round((tokens_saved / max(1, user_raw_tokens)) * 100, 1)
-        
-        opt_result["metrics"]["originalTokens"] = user_raw_tokens
-        opt_result["metrics"]["tokensSavedPerCall"] = tokens_saved
-        opt_result["metrics"]["percentageSaved"] = lt_pct_saved
-        
-        opt_result["variants"]["lowToken"]["tokenDelta"] = lt_tokens - user_raw_tokens
-        opt_result["variants"]["lowToken"]["percentageDelta"] = lt_pct_saved
-        
-        opt_result["variants"]["highContext"]["tokenDelta"] = hc_tokens - user_raw_tokens
-        opt_result["variants"]["highContext"]["percentageDelta"] = round(((hc_tokens - user_raw_tokens) / max(1, user_raw_tokens)) * 100, 1)
+    lt_tokens = opt_result["variants"]["lowToken"]["tokenCount"]
+    
+    if lt_tokens > user_raw_tokens:
+        # Guarantee invariant: if already minimal, clamp to user_raw_tokens and use clean text
+        lt_tokens = user_raw_tokens
+        opt_result["variants"]["lowToken"]["tokenCount"] = lt_tokens
+        opt_result["variants"]["lowToken"]["prompt"] = text.strip()
+
+    tokens_saved = max(0, user_raw_tokens - lt_tokens)
+    lt_pct_saved = round((tokens_saved / max(1, user_raw_tokens)) * 100, 1)
+    
+    opt_result["metrics"]["originalTokens"] = user_raw_tokens
+    opt_result["metrics"]["tokensSavedPerCall"] = tokens_saved
+    opt_result["metrics"]["percentageSaved"] = lt_pct_saved
+    opt_result["variants"]["lowToken"]["tokenDelta"] = -tokens_saved
+    opt_result["variants"]["lowToken"]["percentageDelta"] = lt_pct_saved
+    
+    hc_tokens = opt_result["variants"]["highContext"]["tokenCount"]
+    opt_result["variants"]["highContext"]["tokenDelta"] = hc_tokens - user_raw_tokens
+    opt_result["variants"]["highContext"]["percentageDelta"] = round(((hc_tokens - user_raw_tokens) / max(1, user_raw_tokens)) * 100, 1)
 
     # 6. Back-Translation for Native Inspection and Dual-Language Token Metrics
     back_translated_hc = None
